@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:planify_app/data/repositories/insights_repository.dart';
 import 'package:planify_app/data/datasources/local_cache_service.dart';
+import 'package:planify_app/data/datasources/cache_keys.dart';
 import 'package:planify_app/data/repositories/auth_repository.dart';
 import 'package:planify_app/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -49,7 +50,9 @@ void main() {
   test('cached profile is rejected when its Firebase UID does not match',
       () async {
     final cache = LocalCacheService();
-    await cache.saveJsonMap('auth_user', {
+    cache.activateUser('uid-a');
+    final session = cache.captureSession('uid-a');
+    await cache.saveJsonMapForUser(session, CacheKeys.profile('uid-a'), {
       'id': 1,
       'email': 'a@example.test',
       'full_name': 'Account A',
@@ -58,7 +61,9 @@ void main() {
     });
     final repository = AuthRepository(cache);
 
+    cache.activateUser('uid-b');
     expect(await repository.getCachedUser('uid-b'), isNull);
+    cache.activateUser('uid-a');
     expect((await repository.getCachedUser('uid-a'))?.fullName, 'Account A');
   });
 

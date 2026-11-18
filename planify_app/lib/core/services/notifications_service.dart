@@ -287,12 +287,15 @@ class NotificationsService {
     ]);
   }
 
-  Future<void> restoreCachedReminders({LocalCacheService? cache}) async {
+  Future<void> restoreCachedReminders({
+    required String uid,
+    required LocalCacheService cache,
+  }) async {
     await initialize();
-    final cacheService = cache ?? LocalCacheService();
-    final tasks = _readCachedTasks(cacheService);
-    final events = _readCachedEvents(cacheService);
-    final reminders = _readCachedReminders(cacheService);
+    final session = cache.captureSession(uid);
+    final tasks = _readCachedTasks(cache, session);
+    final events = _readCachedEvents(cache, session);
+    final reminders = _readCachedReminders(cache, session);
     final results = await Future.wait([tasks, events, reminders]);
     final cachedTasks = results[0] as List<TaskModel>;
     final cachedEvents = results[1] as List<EventModel>;
@@ -412,8 +415,14 @@ class NotificationsService {
     }
   }
 
-  Future<List<TaskModel>> _readCachedTasks(LocalCacheService cache) async {
-    final rawTasks = await cache.readJsonList(tasksCacheKey);
+  Future<List<TaskModel>> _readCachedTasks(
+    LocalCacheService cache,
+    CacheSession session,
+  ) async {
+    final rawTasks = await cache.readJsonListForUser(
+      session,
+      CacheKeys.tasks(session.uid),
+    );
     final tasks = <TaskModel>[];
     for (final item in rawTasks) {
       try {
@@ -425,8 +434,14 @@ class NotificationsService {
     return tasks;
   }
 
-  Future<List<EventModel>> _readCachedEvents(LocalCacheService cache) async {
-    final rawEvents = await cache.readJsonList(eventsCacheKey);
+  Future<List<EventModel>> _readCachedEvents(
+    LocalCacheService cache,
+    CacheSession session,
+  ) async {
+    final rawEvents = await cache.readJsonListForUser(
+      session,
+      CacheKeys.events(session.uid),
+    );
     final events = <EventModel>[];
     for (final item in rawEvents) {
       try {
@@ -863,8 +878,13 @@ class NotificationsService {
   }
 
   Future<List<ReminderModel>> _readCachedReminders(
-      LocalCacheService cache) async {
-    final raw = await cache.readJsonList(remindersCacheKey);
+    LocalCacheService cache,
+    CacheSession session,
+  ) async {
+    final raw = await cache.readJsonListForUser(
+      session,
+      CacheKeys.reminders(session.uid),
+    );
     final reminders = <ReminderModel>[];
     for (final item in raw) {
       try {

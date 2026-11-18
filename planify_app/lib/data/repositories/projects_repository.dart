@@ -9,15 +9,18 @@ import 'package:planify_app/data/mock/demo_data.dart';
 import 'package:planify_app/data/models/project_model.dart';
 import 'package:planify_app/data/models/task_model.dart';
 import 'package:planify_app/data/models/note_model.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
 
 class ProjectsRepository {
   final LocalCacheService _cache;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final String? _uid;
+  final CacheSession? _session;
 
-  ProjectsRepository(this._cache);
+  ProjectsRepository(this._cache, this._uid)
+      : _session = _uid == null ? null : _cache.captureSession(_uid);
 
-  String? get _uid => _auth.currentUser?.uid;
   int get _userId => currentStableUserId(_auth) ?? 0;
 
   Future<List<ProjectModel>> getProjects() async {
@@ -26,7 +29,7 @@ class ProjectsRepository {
     }
 
     try {
-      final snapshot = await ownedQuery(_firestore, 'projects', _uid!).get();
+      final snapshot = await ownedQuery(_firestore, 'projects', _uid).get();
       final projects = snapshot.docs
           .map((doc) => ProjectModel.fromJson(doc.data()))
           .toList()
@@ -67,7 +70,7 @@ class ProjectsRepository {
     await _firestore
         .collection('projects')
         .doc(id.toString())
-        .set(withFirebaseOwner(project.toJson(), _uid!));
+        .set(withFirebaseOwner(project.toJson(), _uid));
 
     final cached = await _readCache();
     await _writeCache([project, ...cached.where((item) => item.id != id)]);
@@ -84,7 +87,7 @@ class ProjectsRepository {
     }
 
     updates['updated_at'] = DateTime.now().toIso8601String();
-    updates['firebase_uid'] = _uid!;
+    updates['firebase_uid'] = _uid;
     await _firestore.collection('projects').doc(id.toString()).update(updates);
     final doc =
         await _firestore.collection('projects').doc(id.toString()).get();
@@ -102,7 +105,7 @@ class ProjectsRepository {
       return;
     }
 
-    final uid = _uid!;
+    final uid = _uid;
     final batch = _firestore.batch();
 
     final tasksSnap = await ownedQuery(_firestore, 'tasks', uid).get();
@@ -159,7 +162,16 @@ class ProjectsRepository {
   }
 
   Future<List<ProjectModel>> _readCache() async {
-    final cached = await _cache.readJsonList(projectsCacheKey);
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return (await _cache.readDemoJsonList(DemoCacheKey.projects))
+          .map(ProjectModel.fromJson)
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+    final cached = await _cache.readJsonListForUser(
+      _session!,
+      CacheKeys.projects(_uid),
+    );
     final projects = cached.map(ProjectModel.fromJson).toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return projects;
@@ -175,9 +187,14 @@ class ProjectsRepository {
   }
 
   Future<void> _writeCache(List<ProjectModel> projects) {
-    return _cache.saveJsonList(
-      projectsCacheKey,
-      projects.map((project) => project.toJson()).toList(),
+    final values = projects.map((project) => project.toJson()).toList();
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return _cache.saveDemoJsonList(DemoCacheKey.projects, values);
+    }
+    return _cache.saveJsonListForUser(
+      _session!,
+      CacheKeys.projects(_uid),
+      values,
     );
   }
 
@@ -209,5 +226,6 @@ class ProjectsRepository {
 final projectsRepositoryProvider = Provider<ProjectsRepository>(
   (ref) => ProjectsRepository(
     ref.watch(localCacheServiceProvider),
+    ref.watch(activeAccountUidProvider),
   ),
 );

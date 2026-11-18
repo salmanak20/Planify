@@ -7,15 +7,18 @@ import 'package:planify_app/data/datasources/cache_keys.dart';
 import 'package:planify_app/data/datasources/local_cache_service.dart';
 import 'package:planify_app/data/mock/demo_data.dart';
 import 'package:planify_app/data/models/event_model.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
 
 class EventsRepository {
   final LocalCacheService _cache;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final String? _uid;
+  final CacheSession? _session;
 
-  EventsRepository(this._cache);
+  EventsRepository(this._cache, this._uid)
+      : _session = _uid == null ? null : _cache.captureSession(_uid);
 
-  String? get _uid => _auth.currentUser?.uid;
   int get _userId => currentStableUserId(_auth) ?? 0;
 
   Future<List<EventModel>> getEvents({DateTime? start, DateTime? end}) async {
@@ -24,7 +27,7 @@ class EventsRepository {
     }
 
     try {
-      Query query = ownedQuery(_firestore, 'events', _uid!);
+      Query query = ownedQuery(_firestore, 'events', _uid);
       final snapshot = await query.get();
       final events = snapshot.docs
           .map((doc) => EventModel.fromJson(doc.data() as Map<String, dynamic>))
@@ -113,7 +116,7 @@ class EventsRepository {
     await _firestore
         .collection('events')
         .doc(id.toString())
-        .set(withFirebaseOwner(event.toJson(), _uid!));
+        .set(withFirebaseOwner(event.toJson(), _uid));
 
     final cached = await _readCache();
     await _writeCache([event, ...cached.where((item) => item.id != id)]);
@@ -129,7 +132,7 @@ class EventsRepository {
     }
 
     updates['updated_at'] = DateTime.now().toIso8601String();
-    updates['firebase_uid'] = _uid!;
+    updates['firebase_uid'] = _uid;
     await _firestore.collection('events').doc(id.toString()).update(updates);
     final doc = await _firestore.collection('events').doc(id.toString()).get();
     final event = EventModel.fromJson(doc.data()!);
@@ -153,7 +156,15 @@ class EventsRepository {
   }
 
   Future<List<EventModel>> _readCache() async {
-    final cached = await _cache.readJsonList(eventsCacheKey);
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return (await _cache.readDemoJsonList(DemoCacheKey.events))
+          .map(EventModel.fromJson)
+          .toList();
+    }
+    final cached = await _cache.readJsonListForUser(
+      _session!,
+      CacheKeys.events(_uid),
+    );
     return cached.map(EventModel.fromJson).toList();
   }
 
@@ -166,10 +177,12 @@ class EventsRepository {
   }
 
   Future<void> _writeCache(List<EventModel> events) {
-    return _cache.saveJsonList(
-      eventsCacheKey,
-      events.map((event) => event.toJson()).toList(),
-    );
+    final values = events.map((event) => event.toJson()).toList();
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return _cache.saveDemoJsonList(DemoCacheKey.events, values);
+    }
+    return _cache.saveJsonListForUser(
+        _session!, CacheKeys.events(_uid), values);
   }
 
   EventModel _applyUpdate(
@@ -196,5 +209,6 @@ class EventsRepository {
 final eventsRepositoryProvider = Provider<EventsRepository>(
   (ref) => EventsRepository(
     ref.watch(localCacheServiceProvider),
+    ref.watch(activeAccountUidProvider),
   ),
 );

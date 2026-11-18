@@ -2,10 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planify_app/core/utils/firebase_identity.dart';
+import 'package:planify_app/data/datasources/cache_keys.dart';
 import 'package:planify_app/data/datasources/local_cache_service.dart';
 import 'package:planify_app/data/models/user_model.dart';
-
-const _authUserCacheKey = 'auth_user';
 
 class ProfileOwnershipException implements Exception {
   const ProfileOwnershipException();
@@ -33,6 +32,14 @@ class AuthRepository {
   bool get requiresFirebaseInitialization => _authOverride == null;
   String? get currentUserUid => _firebaseAuth.currentUser?.uid;
   Stream<User?> get idTokenChanges => _firebaseAuth.idTokenChanges();
+  LocalCacheService get cacheService => _cache;
+
+  void activateCacheUser(String? uid) => _cache.activateUser(uid);
+
+  void invalidateCacheSession(String? expectedUid) =>
+      _cache.invalidateUser(expectedUid);
+
+  Future<void> clearUserCache(String uid) => _cache.clearUserCache(uid);
 
   Future<UserModel> register({
     required String email,
@@ -106,23 +113,30 @@ class AuthRepository {
   }
 
   Future<UserModel?> getCachedUser(String expectedUid) async {
-    final cached = await _cache.readJsonMap(_authUserCacheKey);
+    final session = _cache.captureSession(expectedUid);
+    final cached = await _cache.readJsonMapForUser(
+      session,
+      CacheKeys.profile(expectedUid),
+    );
     if (cached == null || cached['firebase_uid'] != expectedUid) return null;
     return UserModel.fromJson(cached);
   }
 
   Future<void> clearCachedUser({String? expectedUid}) async {
     if (expectedUid == null) return;
-    final cached = await _cache.readJsonMap(_authUserCacheKey);
+    final session = _cache.captureSession(expectedUid);
+    final profileKey = CacheKeys.profile(expectedUid);
+    final cached = await _cache.readJsonMapForUser(session, profileKey);
     if (cached?['firebase_uid'] == expectedUid) {
-      await _cache.remove(_authUserCacheKey);
+      await _cache.removeForUser(session, profileKey);
     }
   }
 
   Future<void> logout() async {
     final uid = currentUserUid;
+    invalidateCacheSession(uid);
+    if (uid != null) await clearUserCache(uid);
     await _firebaseAuth.signOut();
-    await clearCachedUser(expectedUid: uid);
   }
 
   Future<bool> isLoggedIn() async => currentUserUid != null;
@@ -131,7 +145,8 @@ class AuthRepository {
     if (_firebaseAuth.currentUser?.uid != uid) {
       throw const ProfileOwnershipException();
     }
-    await _cache.saveJsonMap(_authUserCacheKey, {
+    final session = _cache.captureSession(uid);
+    await _cache.saveJsonMapForUser(session, CacheKeys.profile(uid), {
       ...profile.toJson(),
       'firebase_uid': uid,
     });

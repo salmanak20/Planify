@@ -99,6 +99,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final previousUid = _activeFirebaseUid;
     final uid = firebaseUser?.uid;
     _activeFirebaseUid = uid;
+    _repo.activateCacheUser(uid);
     state = AuthState(
       status: firebaseUser == null
           ? AuthStatus.unauthenticated
@@ -110,7 +111,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     if (firebaseUser == null) {
       try {
-        await _repo.clearCachedUser(expectedUid: previousUid);
+        if (previousUid != null && previousUid != uid) {
+          await _repo.clearUserCache(previousUid);
+        }
       } catch (_) {
         // Sign-out state is authoritative even when local cache cleanup fails.
       }
@@ -125,6 +128,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
 
     try {
+      if (previousUid != null && previousUid != uid) {
+        await _repo.clearUserCache(previousUid);
+      }
+      if (!mounted || generation != _generation) return;
       final user = await _repo.loadProfile(firebaseUser);
       if (!mounted ||
           generation != _generation ||
@@ -257,10 +264,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     final previousUid = _activeFirebaseUid;
+    _activeFirebaseUid = null;
+    _repo.invalidateCacheSession(previousUid);
     state = const AuthState(status: AuthStatus.loading, isLoading: true);
     try {
+      if (previousUid != null) await _repo.clearUserCache(previousUid);
+    } catch (_) {
+      // Cache failures never keep Firebase authenticated or expose cached data.
+    }
+    try {
       await _clearGoogleSession();
-      await _repo.clearCachedUser(expectedUid: previousUid);
     } catch (error) {
       state = AuthState(
         status: AuthStatus.error,

@@ -4,22 +4,34 @@ import 'package:planify_app/core/services/notifications_service.dart';
 import 'package:planify_app/core/utils/app_snackbar.dart';
 import 'package:planify_app/data/models/event_model.dart';
 import 'package:planify_app/data/repositories/events_repository.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/account_scoped_notifier.dart';
 
-class EventsNotifier extends StateNotifier<AsyncValue<List<EventModel>>> {
+class EventsNotifier
+    extends AccountScopedStateNotifier<AsyncValue<List<EventModel>>> {
   final EventsRepository _repo;
   final NotificationsService _notifications;
+  final String? _accountUid;
 
-  EventsNotifier(this._repo, this._notifications)
-      : super(const AsyncValue.loading()) {
-    load();
+  EventsNotifier(this._repo, this._notifications, this._accountUid)
+      : super(_accountUid == null
+            ? const AsyncValue.data([])
+            : const AsyncValue.loading()) {
+    if (_accountUid != null) load();
   }
 
   Future<void> load({DateTime? start, DateTime? end}) async {
+    if (_accountUid == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     state = const AsyncValue.loading();
-    state =
+    final result =
         await AsyncValue.guard(() => _repo.getEvents(start: start, end: end));
+    if (!mounted) return;
+    state = result;
     final events = state.valueOrNull;
-    if (events != null) {
+    if (mounted && events != null) {
       await _trySyncEvents(events);
     }
   }
@@ -322,5 +334,6 @@ final eventsProvider =
   (ref) => EventsNotifier(
     ref.watch(eventsRepositoryProvider),
     NotificationsService.instance,
+    ref.watch(activeAccountUidProvider),
   ),
 );

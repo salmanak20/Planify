@@ -8,15 +8,18 @@ import 'package:planify_app/data/datasources/local_cache_service.dart';
 import 'package:planify_app/data/mock/demo_data.dart';
 import 'package:planify_app/data/models/note_model.dart';
 import 'package:planify_app/data/models/task_model.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
 
 class NotesRepository {
   final LocalCacheService _cache;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final String? _uid;
+  final CacheSession? _session;
 
-  NotesRepository(this._cache);
+  NotesRepository(this._cache, this._uid)
+      : _session = _uid == null ? null : _cache.captureSession(_uid);
 
-  String? get _uid => _auth.currentUser?.uid;
   int get _userId => currentStableUserId(_auth) ?? 0;
 
   Future<List<NoteModel>> getNotes({
@@ -36,7 +39,7 @@ class NotesRepository {
     }
 
     try {
-      Query query = ownedQuery(_firestore, 'notes', _uid!);
+      Query query = ownedQuery(_firestore, 'notes', _uid);
       final snapshot = await query.get();
       final notes = snapshot.docs
           .map((doc) => NoteModel.fromJson(doc.data() as Map<String, dynamic>))
@@ -134,7 +137,7 @@ class NotesRepository {
     await _firestore
         .collection('notes')
         .doc(id.toString())
-        .set(withFirebaseOwner(note.toJson(), _uid!));
+        .set(withFirebaseOwner(note.toJson(), _uid));
 
     final cached = await _readCache();
     await _writeCache([note, ...cached.where((item) => item.id != id)]);
@@ -150,7 +153,7 @@ class NotesRepository {
     }
 
     updates['updated_at'] = DateTime.now().toIso8601String();
-    updates['firebase_uid'] = _uid!;
+    updates['firebase_uid'] = _uid;
     await _firestore.collection('notes').doc(id.toString()).update(updates);
     final doc = await _firestore.collection('notes').doc(id.toString()).get();
     final note = NoteModel.fromJson(doc.data()!);
@@ -194,7 +197,7 @@ class NotesRepository {
       isPinned: !current.isPinned,
       updatedAt: DateTime.now(),
     );
-    await docRef.update(withFirebaseOwner(toggled.toJson(), _uid!));
+    await docRef.update(withFirebaseOwner(toggled.toJson(), _uid));
 
     final cached = await _readCache();
     await _writeCache(_replaceNote(cached, toggled));
@@ -236,7 +239,15 @@ class NotesRepository {
   }
 
   Future<List<NoteModel>> _readCache() async {
-    final cached = await _cache.readJsonList(notesCacheKey);
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return (await _cache.readDemoJsonList(DemoCacheKey.notes))
+          .map(NoteModel.fromJson)
+          .toList();
+    }
+    final cached = await _cache.readJsonListForUser(
+      _session!,
+      CacheKeys.notes(_uid),
+    );
     return cached.map(NoteModel.fromJson).toList();
   }
 
@@ -249,10 +260,11 @@ class NotesRepository {
   }
 
   Future<void> _writeCache(List<NoteModel> notes) {
-    return _cache.saveJsonList(
-      notesCacheKey,
-      notes.map((note) => note.toJson()).toList(),
-    );
+    final values = notes.map((note) => note.toJson()).toList();
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return _cache.saveDemoJsonList(DemoCacheKey.notes, values);
+    }
+    return _cache.saveJsonListForUser(_session!, CacheKeys.notes(_uid), values);
   }
 
   NoteModel _applyUpdate(
@@ -279,5 +291,6 @@ class NotesRepository {
 final notesRepositoryProvider = Provider<NotesRepository>(
   (ref) => NotesRepository(
     ref.watch(localCacheServiceProvider),
+    ref.watch(activeAccountUidProvider),
   ),
 );

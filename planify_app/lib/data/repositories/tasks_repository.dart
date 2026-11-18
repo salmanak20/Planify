@@ -7,15 +7,18 @@ import 'package:planify_app/data/datasources/cache_keys.dart';
 import 'package:planify_app/data/datasources/local_cache_service.dart';
 import 'package:planify_app/data/mock/demo_data.dart';
 import 'package:planify_app/data/models/task_model.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
 
 class TasksRepository {
   final LocalCacheService _cache;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String? _uid;
+  final CacheSession? _session;
 
-  TasksRepository(this._cache);
+  TasksRepository(this._cache, this._uid)
+      : _session = _uid == null ? null : _cache.captureSession(_uid);
 
-  String? get _uid => _auth.currentUser?.uid;
   int get _userId => currentStableUserId(_auth) ?? 0;
 
   Future<List<TaskModel>> getTasks({
@@ -33,8 +36,7 @@ class TasksRepository {
       );
     }
     try {
-      Query<Map<String, dynamic>> query =
-          ownedQuery(_firestore, 'tasks', _uid!);
+      Query<Map<String, dynamic>> query = ownedQuery(_firestore, 'tasks', _uid);
 
       final snapshot = await query.get();
       var tasks =
@@ -112,7 +114,7 @@ class TasksRepository {
     await _firestore
         .collection('tasks')
         .doc(id.toString())
-        .set(withFirebaseOwner(task.toJson(), _uid!));
+        .set(withFirebaseOwner(task.toJson(), _uid));
 
     final cached = await _readCache();
     await _writeCache([task, ...cached.where((item) => item.id != task.id)]);
@@ -134,7 +136,7 @@ class TasksRepository {
     }
 
     updates['updated_at'] = DateTime.now().toIso8601String();
-    updates['firebase_uid'] = _uid!;
+    updates['firebase_uid'] = _uid;
     await _firestore.collection('tasks').doc(id.toString()).update(updates);
 
     final doc = await _firestore.collection('tasks').doc(id.toString()).get();
@@ -203,7 +205,7 @@ class TasksRepository {
       transaction.update(docRef, {
         'is_complete': updatedIsComplete,
         'updated_at': DateTime.now().toIso8601String(),
-        'firebase_uid': _uid!,
+        'firebase_uid': _uid,
       });
 
       currentData['is_complete'] = updatedIsComplete;
@@ -239,7 +241,7 @@ class TasksRepository {
     await _firestore.collection('tasks').doc(id.toString()).update({
       'subtasks': subtasks,
       'updated_at': DateTime.now().toIso8601String(),
-      'firebase_uid': _uid!,
+      'firebase_uid': _uid,
     });
 
     final doc = await _firestore.collection('tasks').doc(id.toString()).get();
@@ -285,7 +287,7 @@ class TasksRepository {
     await _firestore
         .collection('tasks')
         .doc(id.toString())
-        .set(withFirebaseOwner(task.toJson(), _uid!));
+        .set(withFirebaseOwner(task.toJson(), _uid));
 
     final cached = await _readCache();
     await _writeCache([task, ...cached.where((item) => item.id != task.id)]);
@@ -293,7 +295,15 @@ class TasksRepository {
   }
 
   Future<List<TaskModel>> _readCache() async {
-    final cached = await _cache.readJsonList(tasksCacheKey);
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return (await _cache.readDemoJsonList(DemoCacheKey.tasks))
+          .map(TaskModel.fromJson)
+          .toList();
+    }
+    final cached = await _cache.readJsonListForUser(
+      _session!,
+      CacheKeys.tasks(_uid),
+    );
     return cached.map(TaskModel.fromJson).toList();
   }
 
@@ -306,10 +316,11 @@ class TasksRepository {
   }
 
   Future<void> _writeCache(List<TaskModel> tasks) {
-    return _cache.saveJsonList(
-      tasksCacheKey,
-      tasks.map((task) => task.toJson()).toList(),
-    );
+    final values = tasks.map((task) => task.toJson()).toList();
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return _cache.saveDemoJsonList(DemoCacheKey.tasks, values);
+    }
+    return _cache.saveJsonListForUser(_session!, CacheKeys.tasks(_uid), values);
   }
 
   List<TaskModel> _applyFilters(
@@ -345,5 +356,6 @@ class TasksRepository {
 final tasksRepositoryProvider = Provider<TasksRepository>(
   (ref) => TasksRepository(
     ref.watch(localCacheServiceProvider),
+    ref.watch(activeAccountUidProvider),
   ),
 );

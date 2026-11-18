@@ -7,15 +7,18 @@ import 'package:planify_app/data/datasources/cache_keys.dart';
 import 'package:planify_app/data/datasources/local_cache_service.dart';
 import 'package:planify_app/data/mock/demo_data.dart';
 import 'package:planify_app/data/models/reminder_model.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
 
 class RemindersRepository {
   final LocalCacheService _cache;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final String? _uid;
+  final CacheSession? _session;
 
-  RemindersRepository(this._cache);
+  RemindersRepository(this._cache, this._uid)
+      : _session = _uid == null ? null : _cache.captureSession(_uid);
 
-  String? get _uid => _auth.currentUser?.uid;
   int get _userId => currentStableUserId(_auth) ?? 0;
 
   Future<List<ReminderModel>> getReminders({bool? isCompleted}) async {
@@ -24,7 +27,7 @@ class RemindersRepository {
     }
 
     try {
-      Query query = ownedQuery(_firestore, 'reminders', _uid!);
+      Query query = ownedQuery(_firestore, 'reminders', _uid);
       final snapshot = await query.get();
       final reminders = snapshot.docs
           .map((doc) =>
@@ -82,7 +85,7 @@ class RemindersRepository {
     await _firestore
         .collection('reminders')
         .doc(id.toString())
-        .set(withFirebaseOwner(reminder.toJson(), _uid!));
+        .set(withFirebaseOwner(reminder.toJson(), _uid));
 
     final cached = await _readCache();
     await _writeCache([reminder, ...cached.where((item) => item.id != id)]);
@@ -99,7 +102,7 @@ class RemindersRepository {
     }
 
     updates['updated_at'] = DateTime.now().toIso8601String();
-    updates['firebase_uid'] = _uid!;
+    updates['firebase_uid'] = _uid;
     await _firestore.collection('reminders').doc(id.toString()).update(updates);
     final doc =
         await _firestore.collection('reminders').doc(id.toString()).get();
@@ -131,7 +134,7 @@ class RemindersRepository {
       isCompleted: !current.isCompleted,
       updatedAt: DateTime.now(),
     );
-    await docRef.update(withFirebaseOwner(toggled.toJson(), _uid!));
+    await docRef.update(withFirebaseOwner(toggled.toJson(), _uid));
 
     final cached = await _readCache();
     await _writeCache(_replaceReminder(cached, toggled));
@@ -156,7 +159,15 @@ class RemindersRepository {
   }
 
   Future<List<ReminderModel>> _readCache() async {
-    final cached = await _cache.readJsonList(remindersCacheKey);
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return (await _cache.readDemoJsonList(DemoCacheKey.reminders))
+          .map(ReminderModel.fromJson)
+          .toList();
+    }
+    final cached = await _cache.readJsonListForUser(
+      _session!,
+      CacheKeys.reminders(_uid),
+    );
     return cached.map(ReminderModel.fromJson).toList();
   }
 
@@ -169,9 +180,14 @@ class RemindersRepository {
   }
 
   Future<void> _writeCache(List<ReminderModel> reminders) {
-    return _cache.saveJsonList(
-      remindersCacheKey,
-      reminders.map((reminder) => reminder.toJson()).toList(),
+    final values = reminders.map((reminder) => reminder.toJson()).toList();
+    if (_uid == null || kEnableOfflineTestingMode) {
+      return _cache.saveDemoJsonList(DemoCacheKey.reminders, values);
+    }
+    return _cache.saveJsonListForUser(
+      _session!,
+      CacheKeys.reminders(_uid),
+      values,
     );
   }
 
@@ -202,5 +218,6 @@ class RemindersRepository {
 final remindersRepositoryProvider = Provider<RemindersRepository>(
   (ref) => RemindersRepository(
     ref.watch(localCacheServiceProvider),
+    ref.watch(activeAccountUidProvider),
   ),
 );

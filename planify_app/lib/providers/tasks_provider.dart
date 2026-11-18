@@ -5,14 +5,20 @@ import 'package:planify_app/core/services/audio_service.dart';
 import 'package:planify_app/core/utils/app_snackbar.dart';
 import 'package:planify_app/data/models/task_model.dart';
 import 'package:planify_app/data/repositories/tasks_repository.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/account_scoped_notifier.dart';
 
-class TasksNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
+class TasksNotifier
+    extends AccountScopedStateNotifier<AsyncValue<List<TaskModel>>> {
   final TasksRepository _repo;
   final NotificationsService _notifications;
+  final String? _accountUid;
 
-  TasksNotifier(this._repo, this._notifications)
-      : super(const AsyncValue.loading()) {
-    load();
+  TasksNotifier(this._repo, this._notifications, this._accountUid)
+      : super(_accountUid == null
+            ? const AsyncValue.data([])
+            : const AsyncValue.loading()) {
+    if (_accountUid != null) load();
   }
 
   Future<void> load({
@@ -20,16 +26,22 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
     int? projectId,
     bool? isComplete,
   }) async {
+    if (_accountUid == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _repo.getTasks(
         priority: priority,
         projectId: projectId,
         isComplete: isComplete,
       ),
     );
+    if (!mounted) return;
+    state = result;
     final tasks = state.valueOrNull;
-    if (tasks != null) {
+    if (mounted && tasks != null) {
       await _trySyncTasks(tasks);
     }
   }
@@ -384,8 +396,12 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
 
 final tasksProvider =
     StateNotifierProvider<TasksNotifier, AsyncValue<List<TaskModel>>>(
-  (ref) => TasksNotifier(
-    ref.watch(tasksRepositoryProvider),
-    NotificationsService.instance,
-  ),
+  (ref) {
+    final uid = ref.watch(activeAccountUidProvider);
+    return TasksNotifier(
+      ref.watch(tasksRepositoryProvider),
+      NotificationsService.instance,
+      uid,
+    );
+  },
 );
