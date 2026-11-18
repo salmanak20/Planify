@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planify - Command Center</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f8f9fa",
+                        "surface": "#f8f9fa",
+                        "surface-variant": "#dee3e6",
+                        "on-secondary": "#f0fedf",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#98b4ec",
+                        "error": "#a83836",
+                        "outline-variant": "#adb3b5",
+                        "on-primary-fixed": "#002656",
+                        "secondary": "#57634c",
+                        "on-secondary-fixed-variant": "#535f48",
+                        "surface-container": "#ebeef0",
+                        "tertiary-container": "#fdcb9c",
+                        "on-tertiary-container": "#63421e",
+                        "on-secondary-fixed": "#37432e",
+                        "surface-container-highest": "#dee3e6",
+                        "surface-container-low": "#f1f4f5",
+                        "inverse-surface": "#0c0f10",
+                        "inverse-on-surface": "#9b9d9e",
+                        "tertiary-dim": "#6f4c27",
+                        "primary-container": "#a5c1fb",
+                        "outline": "#767c7e",
+                        "secondary-fixed": "#dae7ca",
+                        "tertiary": "#7c5831",
+                        "surface-dim": "#d5dbdd",
+                        "inverse-primary": "#a5c1fb",
+                        "on-tertiary": "#fff7f3",
+                        "on-primary-container": "#1d3c6d",
+                        "error-container": "#fa746f",
+                        "on-error-container": "#6e0a12",
+                        "error-dim": "#67040d",
+                        "on-error": "#fff7f6",
+                        "surface-container-high": "#e5e9eb",
+                        "tertiary-fixed-dim": "#edbd8f",
+                        "secondary-fixed-dim": "#ccd9bc",
+                        "on-primary-fixed-variant": "#274576",
+                        "secondary-container": "#dae7ca",
+                        "background": "#f8f9fa",
+                        "on-primary": "#f9f8ff",
+                        "on-background": "#2d3335",
+                        "primary-fixed": "#a5c1fb",
+                        "on-surface-variant": "#5a6062",
+                        "on-secondary-container": "#4a553f",
+                        "primary-dim": "#365385",
+                        "tertiary-fixed": "#fdcb9c",
+                        "on-tertiary-fixed-variant": "#6e4b26",
+                        "on-surface": "#2d3335",
+                        "secondary-dim": "#4b5740",
+                        "on-tertiary-fixed": "#4d2f0c",
+                        "surface-tint": "#435f92",
+                        "primary": "#435f92"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .brand-font { font-family: 'Manrope', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen pb-24 md:pb-0 md:pt-16">
+<!-- TopAppBar -->
+<header class="bg-slate-50/80 backdrop-blur-md fixed top-0 w-full z-50">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-slate-200/50 rounded-full transition-transform duration-200 active:scale-95">
+<span class="material-symbols-outlined text-blue-700">menu</span>
+</button>
+<span class="text-2xl font-extrabold text-slate-900 tracking-tight">Planify</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 rounded-full bg-primary-fixed overflow-hidden ring-2 ring-surface-container">
+<img alt="User Profile" data-alt="Portrait of a young professional with a friendly smile, clean lighting, soft bokeh background office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-RrFWGzgkiPZwoD9u44uDn5tB6XIwnt0048vMbvQeorbmkzBxb14PzzWoGe-Wdo-1P3l5o8HPimEFxOUf8_eUuXGW4cVOUbt4CqtQf--6ZiQyi3u3C3zoe4_0sqNJ2YFFEUXwRroMicP8hgZtLVK-P1aYzaaPD2CK1UQQL9TTdly3klftDhfJKWyZau_hlPK00fAGp2EGGM-2fTqIJjz69ROr4E_i3AjLCqyg__lwSWziYnuCdnnu5HHalDKDmEzVF-h1HCbuKFI"/>
+</div>
+</div>
+</div>
+</header>
+<main class="max-w-screen-xl mx-auto px-6 py-8">
+<!-- Hero Welcome -->
+<section class="mb-10">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="text-5xl font-extrabold tracking-tight text-on-surface mb-2">Good morning, Julian.</h1>
+<p class="text-lg text-on-surface-variant font-medium">You have 4 tasks to wrap up today.</p>
+</div>
+<!-- Focus Mode CTA -->
+<button class="flex items-center gap-3 px-8 py-4 bg-gradient-to-br from-primary to-primary-dim text-on-primary rounded-full shadow-[0_24px_24px_-4px_rgba(45,51,53,0.06)] hover:scale-[1.02] active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-headline font-bold text-lg">Start Focus Mode</span>
+</button>
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Next Up Section (Large Column) -->
+<div class="md:col-span-7 space-y-6">
+<div class="bg-surface-container-low rounded-[2rem] p-8">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-2xl font-bold font-headline">Next Up</h2>
+<span class="text-sm font-semibold text-primary px-3 py-1 bg-primary-container/30 rounded-full">Today</span>
+</div>
+<div class="space-y-4">
+<!-- Task Card -->
+<div class="group bg-surface-container-lowest p-6 rounded-2xl flex items-center gap-4 transition-all hover:scale-[0.98] cursor-pointer">
+<div class="w-6 h-6 border-2 border-outline-variant rounded-full flex items-center justify-center group-hover:border-primary transition-colors">
+<span class="material-symbols-outlined text-[16px] text-primary opacity-0 group-hover:opacity-100">check</span>
+</div>
+<div class="flex-1">
+<h3 class="font-semibold text-on-surface">Review Q3 Design System Updates</h3>
+<p class="text-sm text-on-surface-variant">Design • 10:00 AM</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">more_vert</span>
+</div>
+<!-- Task Card -->
+<div class="group bg-surface-container-lowest p-6 rounded-2xl flex items-center gap-4 transition-all hover:scale-[0.98] cursor-pointer">
+<div class="w-6 h-6 border-2 border-outline-variant rounded-full flex items-center justify-center"></div>
+<div class="flex-1">
+<h3 class="font-semibold text-on-surface">Weekly Sync with Product Team</h3>
+<p class="text-sm text-on-surface-variant">Management • 11:30 AM</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">more_vert</span>
+</div>
+<!-- Task Card -->
+<div class="group bg-surface-container-lowest p-6 rounded-2xl flex items-center gap-4 transition-all hover:scale-[0.98] cursor-pointer">
+<div class="w-6 h-6 border-2 border-outline-variant rounded-full flex items-center justify-center"></div>
+<div class="flex-1">
+<h3 class="font-semibold text-on-surface">Draft Content Strategy for Launch</h3>
+<p class="text-sm text-on-surface-variant">Marketing • 2:00 PM</p>
+</div>
+<span class="material-symbols-outlined text-outline-variant">more_vert</span>
+</div>
+</div>
+</div>
+<!-- Recent Notes (Horizontal Scroll/Grid) -->
+<div class="bg-surface-container-low rounded-[2rem] p-8">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-2xl font-bold font-headline">Recent Notes</h2>
+<button class="text-secondary font-bold hover:underline">View all</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<div class="bg-secondary-container/20 p-6 rounded-2xl border border-secondary-container/10">
+<span class="material-symbols-outlined text-secondary mb-3" style="font-variation-settings: 'FILL' 1;">description</span>
+<h4 class="font-bold mb-2">Project 'Sanctuary' Notes</h4>
+<p class="text-sm text-on-surface-variant line-clamp-2">Exploring the intersections of mindful architecture and digital space...</p>
+<div class="mt-4 text-[10px] uppercase tracking-widest font-bold text-secondary-dim">2 hours ago</div>
+</div>
+<div class="bg-tertiary-container/20 p-6 rounded-2xl border border-tertiary-container/10">
+<span class="material-symbols-outlined text-tertiary mb-3" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+<h4 class="font-bold mb-2">Quick Ideas: UI Motion</h4>
+<p class="text-sm text-on-surface-variant line-clamp-2">The bounce should be subtle, mimicking physical weight...</p>
+<div class="mt-4 text-[10px] uppercase tracking-widest font-bold text-on-tertiary-fixed-variant">Yesterday</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Calendar & Contextual (Side Column) -->
+<div class="md:col-span-5 space-y-6">
+<!-- Calendar Section -->
+<div class="bg-surface-container-low rounded-[2rem] p-8">
+<div class="flex items-center justify-between mb-8">
+<h2 class="text-2xl font-bold font-headline">Calendar</h2>
+<span class="material-symbols-outlined text-on-surface-variant">calendar_today</span>
+</div>
+<div class="space-y-6">
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold text-primary uppercase">Tue</span>
+<span class="text-xl font-extrabold">24</span>
+</div>
+<div class="flex-1 bg-surface-container-lowest p-4 rounded-xl border-l-4 border-primary">
+<h4 class="font-bold text-sm">System Review</h4>
+<p class="text-xs text-on-surface-variant">09:00 - 10:30 AM</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold text-on-surface-variant uppercase">Wed</span>
+<span class="text-xl font-extrabold">25</span>
+</div>
+<div class="flex-1 bg-surface-container-lowest p-4 rounded-xl border-l-4 border-tertiary">
+<h4 class="font-bold text-sm">Design Workshop</h4>
+<p class="text-xs text-on-surface-variant">02:00 - 04:00 PM</p>
+</div>
+</div>
+<div class="flex gap-4 opacity-50">
+<div class="flex flex-col items-center">
+<span class="text-xs font-bold text-on-surface-variant uppercase">Thu</span>
+<span class="text-xl font-extrabold">26</span>
+</div>
+<div class="flex-1 bg-surface-container-lowest p-4 rounded-xl border-l-4 border-outline">
+<h4 class="font-bold text-sm">Product Offsite</h4>
+<p class="text-xs text-on-surface-variant">All Day</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Workspace Quick Access -->
+<div class="bg-surface-container-highest rounded-[2rem] p-8 relative overflow-hidden h-64 flex flex-col justify-end">
+<div class="absolute top-0 left-0 w-full h-full">
+<img alt="Workspace" class="w-full h-full object-cover opacity-20 grayscale" data-alt="Minimalist modern office interior with a clean desk, wooden textures, and soft natural sunlight filtering through large windows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9Q_1KkuTrkRhjiM2srpw6HPpo6Em-W24yi3f0xcE0zm1Bk6xEGNB4dPfE6U2LCfsXKo31PSP_zTCCqN2INtkuepQUatGHakMC-d5y4GPOhLaGw5SOmaWTIH0HmYyZOUI2hvpy8bwVbwQ2df42y9jOOXpEhvSifj5clGqBHaBzKc-5jyDVpeQrlMfG23MAT8obaauBy1gddWajC2PZ2D1CYXSVFY_7TIF_ttaOuHEgazmo13D20Bw7W0GYZiIh5kbM5HB5YDGLB1A"/>
+</div>
+<div class="relative z-10">
+<h3 class="text-xl font-bold font-headline mb-2">Team Workspace</h3>
+<p class="text-sm text-on-surface-variant mb-6">4 active collaborators in Design System</p>
+<button class="w-full py-3 bg-surface-container-lowest text-on-surface font-bold rounded-xl hover:bg-white transition-colors">Open Workspace</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB (Suppressed on Dashboard as requested by specific logic for sub-pages, but if we treat Dashboard as 'The primary ecosystem' for 'Start Focus Mode', we keep it as a Floating action) -->
+<!-- However, our JSON definition didn't include a separate FAB component, but Design System mentions it. We'll use the prominent Hero button instead for primary intent. -->
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-slate-50/90 backdrop-blur-xl flex justify-around items-center px-4 pb-4 pt-2 shadow-[0_-4px_24px_-4px_rgba(45,51,53,0.06)]">
+<!-- Active: Home -->
+<a class="flex flex-col items-center justify-center bg-green-100 text-green-900 rounded-full px-5 py-1 transition-all scale-90 duration-150 ease-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1 hover:text-blue-600" href="#">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1 hover:text-blue-600" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider">Calendar</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1 hover:text-blue-600" href="#">
+<span class="material-symbols-outlined">description</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider">Notes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1 hover:text-blue-600" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider">Workspace</span>
+</a>
+</nav>
+</body></html>

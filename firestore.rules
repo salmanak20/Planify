@@ -1,0 +1,71 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDocumentPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+
+    function matchesCurrentUserId(data) {
+      return exists(userDocumentPath())
+        && data.user_id == get(userDocumentPath()).data.id;
+    }
+
+    function matchesFirebaseUid(data) {
+      return data.firebase_uid == request.auth.uid;
+    }
+
+    function ownsExisting() {
+      return signedIn()
+        && (matchesFirebaseUid(resource.data)
+          || matchesCurrentUserId(resource.data));
+    }
+
+    function ownsIncoming() {
+      return signedIn()
+        && (matchesFirebaseUid(request.resource.data)
+          || matchesCurrentUserId(request.resource.data));
+    }
+
+    match /users/{userId} {
+      allow read, delete: if signedIn() && userId == request.auth.uid;
+      allow create, update: if signedIn()
+        && userId == request.auth.uid
+        && matchesFirebaseUid(request.resource.data);
+    }
+
+    match /{collection}/{docId} {
+      allow read, delete: if collection in [
+          'tasks',
+          'notes',
+          'events',
+          'projects',
+          'reminders',
+          'focus_sessions'
+        ] && ownsExisting();
+
+      allow update: if collection in [
+          'tasks',
+          'notes',
+          'events',
+          'projects',
+          'reminders',
+          'focus_sessions'
+        ] && ownsExisting()
+        && ownsIncoming();
+
+      allow create: if collection in [
+          'tasks',
+          'notes',
+          'events',
+          'projects',
+          'reminders',
+          'focus_sessions'
+        ] && ownsIncoming();
+    }
+  }
+}

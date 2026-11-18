@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planify - Focus Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#f8f9fa",
+                      "surface": "#f8f9fa",
+                      "surface-variant": "#dee3e6",
+                      "on-secondary": "#f0fedf",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed-dim": "#98b4ec",
+                      "error": "#a83836",
+                      "outline-variant": "#adb3b5",
+                      "on-primary-fixed": "#002656",
+                      "secondary": "#57634c",
+                      "on-secondary-fixed-variant": "#535f48",
+                      "surface-container": "#ebeef0",
+                      "tertiary-container": "#fdcb9c",
+                      "on-tertiary-container": "#63421e",
+                      "on-secondary-fixed": "#37432e",
+                      "surface-container-highest": "#dee3e6",
+                      "surface-container-low": "#f1f4f5",
+                      "inverse-surface": "#0c0f10",
+                      "inverse-on-surface": "#9b9d9e",
+                      "tertiary-dim": "#6f4c27",
+                      "primary-container": "#a5c1fb",
+                      "outline": "#767c7e",
+                      "secondary-fixed": "#dae7ca",
+                      "tertiary": "#7c5831",
+                      "surface-dim": "#d5dbdd",
+                      "inverse-primary": "#a5c1fb",
+                      "on-tertiary": "#fff7f3",
+                      "on-primary-container": "#1d3c6d",
+                      "error-container": "#fa746f",
+                      "on-error-container": "#6e0a12",
+                      "error-dim": "#67040d",
+                      "on-error": "#fff7f6",
+                      "surface-container-high": "#e5e9eb",
+                      "tertiary-fixed-dim": "#edbd8f",
+                      "secondary-fixed-dim": "#ccd9bc",
+                      "on-primary-fixed-variant": "#274576",
+                      "secondary-container": "#dae7ca",
+                      "background": "#f8f9fa",
+                      "on-primary": "#f9f8ff",
+                      "on-background": "#2d3335",
+                      "primary-fixed": "#a5c1fb",
+                      "on-surface-variant": "#5a6062",
+                      "on-secondary-container": "#4a553f",
+                      "primary-dim": "#365385",
+                      "tertiary-fixed": "#fdcb9c",
+                      "on-tertiary-fixed-variant": "#6e4b26",
+                      "on-surface": "#2d3335",
+                      "secondary-dim": "#4b5740",
+                      "on-tertiary-fixed": "#4d2f0c",
+                      "surface-tint": "#435f92",
+                      "primary": "#435f92"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "fontFamily": {
+                      "headline": ["Manrope"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-manrope { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bg-focus-gradient {
+            background: linear-gradient(135deg, #0c0f10 0%, #1d3c6d 100%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-focus-gradient text-surface-bright min-h-screen overflow-hidden flex flex-col items-center justify-between selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Anchor (Manual suppression of default shared shell for Focus Mode) -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-8 h-20 max-w-screen-2xl mx-auto">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 bg-primary-container rounded-full animate-pulse"></div>
+<span class="font-manrope font-extrabold text-xl tracking-tight text-surface-bright opacity-80">Planify</span>
+</div>
+<div class="flex items-center gap-6">
+<button class="flex items-center gap-2 px-4 py-2 rounded-full glass-panel border border-surface-variant/10 hover:bg-white/10 transition-all duration-300">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span class="font-manrope text-sm font-semibold tracking-wide">Settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content: The Mindful Architect Canvas -->
+<main class="flex-grow w-full flex flex-col items-center justify-center px-6 relative">
+<!-- Background Aura (Decorative) -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+<div class="w-[600px] h-[600px] bg-primary rounded-full blur-[120px]"></div>
+</div>
+<!-- Central Timer Section -->
+<div class="z-10 text-center flex flex-col items-center">
+<!-- Active Task Context -->
+<div class="mb-12 flex flex-col items-center animate-fade-in">
+<span class="text-primary-fixed-dim font-manrope font-semibold tracking-[0.2em] text-xs uppercase mb-3">Currently Focusing On</span>
+<h1 class="font-manrope font-extrabold text-4xl md:text-5xl text-surface-bright tracking-tight">Drafting PRD</h1>
+<div class="mt-4 flex gap-2">
+<span class="px-3 py-1 rounded-full glass-panel text-[11px] font-bold text-primary-container border border-primary/20">WORK</span>
+<span class="px-3 py-1 rounded-full glass-panel text-[11px] font-bold text-tertiary-container border border-tertiary/20">HIGH PRIORITY</span>
+</div>
+</div>
+<!-- Big Timer Display -->
+<div class="relative group">
+<div class="font-manrope font-extrabold text-[120px] md:text-[180px] leading-none text-surface-bright select-none tracking-tighter drop-shadow-2xl">
+                    25:00
+                </div>
+<!-- Circular Progress (Subtle) -->
+<svg class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] md:w-[480px] md:h-[480px] -rotate-90 pointer-events-none">
+<circle cx="50%" cy="50%" fill="none" r="48%" stroke="rgba(165, 193, 251, 0.05)" stroke-width="2"></circle>
+<circle class="transition-all duration-1000" cx="50%" cy="50%" fill="none" r="48%" stroke="#a5c1fb" stroke-dasharray="1507" stroke-dashoffset="300" stroke-width="2"></circle>
+</svg>
+</div>
+<!-- Focus Controls -->
+<div class="mt-12 flex items-center gap-8">
+<button class="w-14 h-14 flex items-center justify-center rounded-full glass-panel text-surface-bright hover:scale-105 transition-all">
+<span class="material-symbols-outlined text-2xl">replay</span>
+</button>
+<button class="w-24 h-24 flex items-center justify-center rounded-full bg-surface-bright text-primary-dim hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary-dim/20">
+<span class="material-symbols-outlined text-5xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<button class="w-14 h-14 flex items-center justify-center rounded-full glass-panel text-surface-bright hover:scale-105 transition-all">
+<span class="material-symbols-outlined text-2xl">skip_next</span>
+</button>
+</div>
+</div>
+<!-- Ambient Sound Bento Grid (Asymmetric) -->
+<div class="mt-20 w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-4 px-4">
+<div class="col-span-1 p-5 rounded-3xl glass-panel border border-white/5 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between aspect-square group">
+<div class="w-10 h-10 rounded-2xl bg-primary-container/20 flex items-center justify-center group-hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-primary-container group-hover:text-primary-dim">rainy</span>
+</div>
+<div>
+<h3 class="font-manrope font-bold text-lg">Rainfall</h3>
+<p class="text-xs text-surface-variant/60 font-medium mt-1">Soft drizzle</p>
+</div>
+</div>
+<div class="col-span-1 p-5 rounded-3xl bg-primary-container text-on-primary-container transition-all cursor-pointer flex flex-col justify-between aspect-square">
+<div class="flex justify-between items-start">
+<div class="w-10 h-10 rounded-2xl bg-on-primary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">waves</span>
+</div>
+<div class="h-8 w-1 flex flex-col gap-1">
+<span class="w-full bg-on-primary-container/40 rounded-full h-1/2"></span>
+<span class="w-full bg-on-primary-container h-full rounded-full"></span>
+</div>
+</div>
+<div>
+<h3 class="font-manrope font-bold text-lg">White Noise</h3>
+<p class="text-xs text-on-primary-container/60 font-medium mt-1">Deep static • Active</p>
+</div>
+</div>
+<div class="col-span-1 p-5 rounded-3xl glass-panel border border-white/5 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between aspect-square group">
+<div class="w-10 h-10 rounded-2xl bg-secondary-container/20 flex items-center justify-center group-hover:bg-secondary-container transition-colors">
+<span class="material-symbols-outlined text-secondary-container group-hover:text-secondary-dim">forest</span>
+</div>
+<div>
+<h3 class="font-manrope font-bold text-lg">Woods</h3>
+<p class="text-xs text-surface-variant/60 font-medium mt-1">Birds &amp; wind</p>
+</div>
+</div>
+<div class="col-span-1 p-5 rounded-3xl glass-panel border border-white/5 hover:bg-white/10 transition-all cursor-pointer flex flex-col justify-between aspect-square group">
+<div class="w-10 h-10 rounded-2xl bg-tertiary-container/20 flex items-center justify-center group-hover:bg-tertiary-container transition-colors">
+<span class="material-symbols-outlined text-tertiary-container group-hover:text-tertiary-dim">local_fire_department</span>
+</div>
+<div>
+<h3 class="font-manrope font-bold text-lg">Fireplace</h3>
+<p class="text-xs text-surface-variant/60 font-medium mt-1">Cozy crackle</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Actions: Focused Exit -->
+<footer class="w-full p-8 flex justify-center">
+<button class="px-8 py-4 rounded-full glass-panel border border-error/30 hover:bg-error/10 hover:border-error/50 transition-all duration-300 group flex items-center gap-3">
+<span class="material-symbols-outlined text-error group-hover:translate-x-[-4px] transition-transform">logout</span>
+<span class="font-manrope font-bold text-error tracking-wide">Leave Focus</span>
+</button>
+</footer>
+<!-- Background Ambience Element -->
+<div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+<div class="absolute -top-[10%] -left-[5%] w-[40%] h-[40%] bg-secondary-container/5 blur-[100px] rounded-full"></div>
+<div class="absolute top-[60%] -right-[10%] w-[50%] h-[50%] bg-tertiary-container/5 blur-[120px] rounded-full"></div>
+</div>
+</body></html>

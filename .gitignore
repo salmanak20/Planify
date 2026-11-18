@@ -1,0 +1,59 @@
+# Flutter and Dart generated files
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.packages
+**/build/
+**/coverage/
+**/.pub-cache/
+**/.gradle/
+**/.android-sdk/
+
+# IDE and operating system files
+**/.idea/
+**/*.iml
+**/*.ipr
+**/*.iws
+.DS_Store
+Thumbs.db
+
+# Android machine-local settings and signing material
+**/local.properties
+**/key.properties
+**/*.jks
+**/*.keystore
+**/*.p12
+**/*.pfx
+
+# Python environments, bytecode, local databases, and logs
+**/.venv/
+**/venv/
+**/env/
+**/__pycache__/
+**/*.py[cod]
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+**/*.log
+
+# Local environment files; keep safe templates
+**/.env
+**/.env.*
+!**/.env.example
+
+# Credentials and private keys
+**/*firebase-adminsdk*.json
+**/*service-account*.json
+**/*service_account*.json
+**/*serviceAccount*.json
+**/*credentials*.json
+**/*.pem
+**/*.key
+**/*.p8
+
+# Firebase local debug output
+**/firebase-debug.log
+**/firebase-debug.*.log
+
+# Verified archive of the former nested backend Git metadata
+/.git-metadata-archive/

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Planify | Notes &amp; Knowledge Base</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f8f9fa",
+                        "surface": "#f8f9fa",
+                        "surface-variant": "#dee3e6",
+                        "on-secondary": "#f0fedf",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed-dim": "#98b4ec",
+                        "error": "#a83836",
+                        "outline-variant": "#adb3b5",
+                        "on-primary-fixed": "#002656",
+                        "secondary": "#57634c",
+                        "on-secondary-fixed-variant": "#535f48",
+                        "surface-container": "#ebeef0",
+                        "tertiary-container": "#fdcb9c",
+                        "on-tertiary-container": "#63421e",
+                        "on-secondary-fixed": "#37432e",
+                        "surface-container-highest": "#dee3e6",
+                        "surface-container-low": "#f1f4f5",
+                        "inverse-surface": "#0c0f10",
+                        "inverse-on-surface": "#9b9d9e",
+                        "tertiary-dim": "#6f4c27",
+                        "primary-container": "#a5c1fb",
+                        "outline": "#767c7e",
+                        "secondary-fixed": "#dae7ca",
+                        "tertiary": "#7c5831",
+                        "surface-dim": "#d5dbdd",
+                        "inverse-primary": "#a5c1fb",
+                        "on-tertiary": "#fff7f3",
+                        "on-primary-container": "#1d3c6d",
+                        "error-container": "#fa746f",
+                        "on-error-container": "#6e0a12",
+                        "error-dim": "#67040d",
+                        "on-error": "#fff7f6",
+                        "surface-container-high": "#e5e9eb",
+                        "tertiary-fixed-dim": "#edbd8f",
+                        "secondary-fixed-dim": "#ccd9bc",
+                        "on-primary-fixed-variant": "#274576",
+                        "secondary-container": "#dae7ca",
+                        "background": "#f8f9fa",
+                        "on-primary": "#f9f8ff",
+                        "on-background": "#2d3335",
+                        "primary-fixed": "#a5c1fb",
+                        "on-surface-variant": "#5a6062",
+                        "on-secondary-container": "#4a553f",
+                        "primary-dim": "#365385",
+                        "tertiary-fixed": "#fdcb9c",
+                        "on-tertiary-fixed-variant": "#6e4b26",
+                        "on-surface": "#2d3335",
+                        "secondary-dim": "#4b5740",
+                        "on-tertiary-fixed": "#4d2f0c",
+                        "surface-tint": "#435f92",
+                        "primary": "#435f92"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased min-h-screen">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md">
+<div class="flex items-center justify-between px-6 h-16 w-full max-w-screen-xl mx-auto">
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-200/50 transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-50" data-icon="menu">menu</span>
+</button>
+<h1 class="font-manrope font-bold text-2xl tracking-tight text-slate-900 dark:text-slate-50">Planify</h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="hidden md:flex items-center gap-1 bg-surface-container-high px-4 py-2 rounded-full border border-outline-variant/15">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-body" placeholder="Search knowledge base..." type="text"/>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/20">
+<img alt="User profile" data-alt="professional portrait of a creative professional woman in a bright modern studio with natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxtnU62C6wWshXZTfVqWGidZUIvB_vKXjdCeV3rUxoGkSQmWwcT2LEfMjQ4Vb02HMHwmbq44nlZqBisoZB3_upHoJ9I98IJhdZpLnVu9geq2Br8qpF9M_ArjdSYkM1El78ZlcGb2xSPLR6Sr8nY8L__rGIJO6FoqNKQbyems15_wCCvotB5s_quN8SokEAFG9u0eyQF5EL3QJvsW1knlnWXolTRGf40tOt80fqGB7oOqA21nHkzZvdfEmILs5Mqaicx_ULJSvrkZ0"/>
+</div>
+</div>
+</div>
+</header>
+<main class="pt-20 pb-28 md:pb-10 max-w-screen-xl mx-auto px-4 md:px-8">
+<div class="flex flex-col lg:flex-row gap-8">
+<!-- Side Navigation - Library Structure -->
+<aside class="hidden lg:block w-64 flex-shrink-0 space-y-8">
+<div>
+<h3 class="font-headline text-xs font-extrabold uppercase tracking-[0.2em] text-on-surface-variant/70 mb-4 px-2">Folders</h3>
+<nav class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl bg-secondary-container text-on-secondary-container font-semibold transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="folder_open" style="font-variation-settings: 'FILL' 1;">folder_open</span>
+<span class="text-sm">Personal Notes</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="folder">folder</span>
+<span class="text-sm">Project X Hub</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="folder">folder</span>
+<span class="text-sm">Work Archives</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container-high transition-all" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="folder">folder</span>
+<span class="text-sm">Inspiration</span>
+</a>
+</nav>
+</div>
+<div>
+<h3 class="font-headline text-xs font-extrabold uppercase tracking-[0.2em] text-on-surface-variant/70 mb-4 px-2">Knowledge Tags</h3>
+<div class="flex flex-wrap gap-2 px-2">
+<span class="px-3 py-1 rounded-full bg-primary-container/10 text-primary text-[11px] font-bold border border-primary/10">STRATEGY</span>
+<span class="px-3 py-1 rounded-full bg-secondary-container/10 text-secondary text-[11px] font-bold border border-secondary/10">DESIGN</span>
+<span class="px-3 py-1 rounded-full bg-tertiary-container/10 text-tertiary text-[11px] font-bold border border-tertiary/10">DRAFT</span>
+<span class="px-3 py-1 rounded-full bg-surface-container-highest text-on-surface-variant text-[11px] font-bold">Q4-2024</span>
+</div>
+</div>
+<div class="pt-6">
+<div class="p-5 rounded-3xl bg-surface-container-low border border-outline-variant/10">
+<p class="font-headline text-sm font-bold mb-2">Sync Status</p>
+<div class="flex items-center gap-2 text-xs text-secondary mb-3">
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                            All changes saved local
+                        </div>
+<button class="w-full py-2 bg-surface-container-lowest text-on-surface text-xs font-semibold rounded-xl shadow-sm border border-outline-variant/5">
+                            Cloud Sync Now
+                        </button>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<div class="flex-1 space-y-8">
+<!-- Editor Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-1">
+<div class="flex items-center gap-2 text-on-surface-variant/60 text-sm">
+<span>Personal Notes</span>
+<span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span>
+<span class="text-primary font-medium">Architecture Framework v2</span>
+</div>
+<h2 class="font-headline text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight leading-tight">Architecture Framework v2</h2>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-all text-sm font-semibold">
+<span class="material-symbols-outlined text-lg" data-icon="share">share</span>
+                            Share
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-all text-sm font-semibold">
+<span class="material-symbols-outlined text-lg" data-icon="more_horiz">more_horiz</span>
+</button>
+</div>
+</div>
+<!-- Bento Style Context Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="p-4 rounded-3xl bg-primary-container/10 border border-primary-container/20 flex items-start gap-4">
+<div class="bg-primary/10 p-2 rounded-2xl">
+<span class="material-symbols-outlined text-primary" data-icon="event" style="font-variation-settings: 'FILL' 1;">event</span>
+</div>
+<div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-primary/70">Linked Event</p>
+<p class="text-sm font-bold text-on-primary-container">Team Sync - 14:00</p>
+</div>
+</div>
+<div class="p-4 rounded-3xl bg-secondary-container/10 border border-secondary-container/20 flex items-start gap-4">
+<div class="bg-secondary/10 p-2 rounded-2xl">
+<span class="material-symbols-outlined text-secondary" data-icon="task_alt" style="font-variation-settings: 'FILL' 1;">task_alt</span>
+</div>
+<div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-secondary/70">Connected Task</p>
+<p class="text-sm font-bold text-on-secondary-container">Finalize UI Specs</p>
+</div>
+</div>
+<div class="p-4 rounded-3xl bg-tertiary-container/10 border border-tertiary-container/20 flex items-start gap-4">
+<div class="bg-tertiary/10 p-2 rounded-2xl">
+<span class="material-symbols-outlined text-tertiary" data-icon="group" style="font-variation-settings: 'FILL' 1;">group</span>
+</div>
+<div>
+<p class="text-[10px] font-bold uppercase tracking-widest text-tertiary/70">Collaborators</p>
+<p class="text-sm font-bold text-on-tertiary-container">Sarah, Marcus +2</p>
+</div>
+</div>
+</div>
+<!-- Rich Text Editor Surface -->
+<div class="bg-surface-container-lowest rounded-[2.5rem] p-8 md:p-12 shadow-sm min-h-[530px] border border-outline-variant/5">
+<!-- Toolbar -->
+<div class="flex items-center flex-wrap gap-2 pb-8 border-b border-surface-container-low mb-8 sticky top-16 bg-surface-container-lowest/90 backdrop-blur-md z-10">
+<button class="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"><span class="material-symbols-outlined" data-icon="format_bold">format_bold</span></button>
+<button class="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"><span class="material-symbols-outlined" data-icon="format_italic">format_italic</span></button>
+<button class="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"><span class="material-symbols-outlined" data-icon="format_underlined">format_underlined</span></button>
+<div class="w-[1px] h-6 bg-outline-variant/30 mx-1"></div>
+<button class="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"><span class="material-symbols-outlined" data-icon="format_list_bulleted">format_list_bulleted</span></button>
+<button class="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"><span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span></button>
+<div class="w-[1px] h-6 bg-outline-variant/30 mx-1"></div>
+<button class="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"><span class="material-symbols-outlined" data-icon="link">link</span></button>
+<button class="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"><span class="material-symbols-outlined" data-icon="image">image</span></button>
+<button class="p-2 rounded-lg hover:bg-surface-container-low text-on-surface-variant"><span class="material-symbols-outlined" data-icon="code">code</span></button>
+<div class="ml-auto flex items-center gap-2">
+<span class="text-[11px] font-medium text-on-surface-variant/40">1,240 words</span>
+</div>
+</div>
+<!-- Editor Content -->
+<div class="prose prose-slate max-w-none">
+<p class="text-on-surface leading-relaxed mb-6 text-lg">
+                            The primary objective of the <span class="bg-primary/10 text-primary-dim px-1 font-semibold rounded">Mindful Architect</span> framework is to transition from purely functional digital spaces to intentional, soulful environments. We achieve this by prioritizing tonal depth over structural rigidness.
+                        </p>
+<h3 class="font-headline text-2xl font-bold text-on-surface mt-10 mb-4">I. The Hierarchy of Silence</h3>
+<p class="text-on-surface-variant leading-relaxed mb-6">
+                            Noise in a UI is not just visual clutter; it's cognitive friction. By removing 1px borders, we allow the eye to glide across surfaces. The transition between `surface_container_low` and `surface_container_lowest` creates a soft cliff that denotes hierarchy naturally.
+                        </p>
+<div class="my-8 rounded-3xl overflow-hidden bg-surface-container">
+<img alt="Modern minimalist office space" class="w-full h-64 object-cover" data-alt="ultra-minimalist modern workspace with clean white desk, designer lamp, and soft afternoon light casting long shadows on light grey walls" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA7GEpf2ngZlm6xz9RUW2dP9D-99GPkbFl30WDSAFdOXWWoBkoeFlPu3rqzcDFM7t17g4eXQu5MD8HoyS0s58UL_avQa1bxlYFRcuknA0X3xHknj5qHJigkMF0lQuIa_53dD0udaGMKLn5Ncnox65CQOkCS6R7OD3JtkYBfMI6SmknmSjdFfq6cUTmHNZIgOxGrUScxUy2932IjruF8Njk3kAa-J-EhcCC-eJ21VAySBwB3cY1HC_aufYp2IcSbOoz03pqmUgTOBOI"/>
+<div class="p-4 text-xs italic text-on-surface-variant/70 text-center">Reference for light-play in spatial UI design.</div>
+</div>
+<h3 class="font-headline text-2xl font-bold text-on-surface mt-10 mb-4">II. Color as Temperature</h3>
+<p class="text-on-surface-variant leading-relaxed mb-6">
+                            Every brand has a temperature. Our palette uses <span class="text-secondary font-bold">Secondary Greens</span> to ground the workspace in a sense of calm, while <span class="text-primary font-bold">Primary Blues</span> are reserved for active task-based momentum.
+                        </p>
+<div class="p-6 bg-surface-container rounded-3xl border border-outline-variant/10 space-y-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary" data-icon="lightbulb">lightbulb</span>
+<span class="font-bold text-on-surface">Key Concept: Tonal Layering</span>
+</div>
+<p class="text-sm text-on-surface-variant italic">"Depth is communicated through color density, not shadows. Think of the interface as stacked sheets of translucent paper."</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- FAB -->
+<button class="fixed right-6 bottom-24 md:bottom-8 z-50 w-14 h-14 bg-primary-container text-on-primary-container rounded-3xl shadow-[0_12px_24px_-8px_rgba(67,95,146,0.3)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200">
+<span class="material-symbols-outlined text-2xl" data-icon="edit" style="font-variation-settings: 'FILL' 1;">edit</span>
+</button>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-xl md:hidden flex justify-around items-center px-4 pb-4 pt-2">
+<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider mt-1">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider mt-1">Calendar</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 rounded-full px-5 py-1 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="description" style="font-variation-settings: 'FILL' 1;">description</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider mt-1">Notes</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-500 px-4 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-manrope text-[11px] font-semibold uppercase tracking-wider mt-1">Workspace</span>
+</a>
+</nav>
+</body></html>

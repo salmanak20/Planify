@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "794852587667",
+    "project_id": "planify-23e25",
+    "storage_bucket": "planify-23e25.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:794852587667:android:7bf8ef54fc591d18967566",
+        "android_client_info": {
+          "package_name": "com.planify.planify_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "794852587667-ehgbu28d473q32a43usgb6id61iak0ss.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.planify.planify_app",
+            "certificate_hash": "50286447b5d2fff2da240d88c0e57dd78754ed3f"
+          }
+        },
+        {
+          "client_id": "794852587667-lji3ntlqfdov3pdm5ls7tftgci6d7n2d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPFbK9RFqS4QPGqRAojrOvx0LSVs5uisc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "794852587667-lji3ntlqfdov3pdm5ls7tftgci6d7n2d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
