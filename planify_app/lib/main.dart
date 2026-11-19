@@ -6,7 +6,7 @@ import 'package:planify_app/core/services/firebase_service.dart';
 import 'package:planify_app/core/services/notifications_service.dart';
 import 'package:planify_app/core/utils/app_snackbar.dart';
 import 'package:planify_app/data/datasources/local_cache_service.dart';
-import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/auth_provider.dart';
 import 'package:planify_app/providers/theme_provider.dart';
 
 void main() async {
@@ -38,14 +38,21 @@ class PlanifyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<String?>(activeAccountUidProvider, (previous, uid) {
-      if (uid == null || uid == previous) return;
-      NotificationsService.instance
-          .restoreCachedReminders(
-        uid: uid,
-        cache: ref.read(localCacheServiceProvider),
-      )
-          .catchError((error) {
+    ref.listen<AuthState>(authProvider, (previous, auth) {
+      if (!auth.isInitialized) return;
+      final uid = auth.isAuthenticated ? auth.firebaseUid : null;
+      final previousUid =
+          previous?.isAuthenticated == true ? previous?.firebaseUid : null;
+      if (previous?.isInitialized == true && uid == previousUid) return;
+      final notifications = NotificationsService.instance;
+      notifications.activateAccount(uid).then((_) {
+        if (uid != null) {
+          return notifications.restoreCachedReminders(
+            uid: uid,
+            cache: ref.read(localCacheServiceProvider),
+          );
+        }
+      }).catchError((error) {
         debugPrint('Notification restoration error: $error');
       });
     });

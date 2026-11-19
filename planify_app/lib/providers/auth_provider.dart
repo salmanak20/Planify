@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:planify_app/core/services/firebase_service.dart';
+import 'package:planify_app/core/services/notifications_service.dart';
 import 'package:planify_app/data/models/user_model.dart';
 import 'package:planify_app/data/repositories/auth_repository.dart';
 
@@ -267,6 +268,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _activeFirebaseUid = null;
     _repo.invalidateCacheSession(previousUid);
     state = const AuthState(status: AuthStatus.loading, isLoading: true);
+    try {
+      await NotificationsService.instance.activateAccount(null);
+    } catch (_) {
+      // Notification cleanup must not prevent Firebase sign-out.
+    }
     try {
       if (previousUid != null) await _repo.clearUserCache(previousUid);
     } catch (_) {

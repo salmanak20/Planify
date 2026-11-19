@@ -296,8 +296,10 @@ class EventsNotifier
   }
 
   Future<void> _trySyncEvent(EventModel event) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncEvent(event);
+      await _notifications.syncEvent(event, accountUid: uid);
     } catch (error) {
       // The event was saved; notification scheduling is best-effort.
       _showNotificationFailure(error);
@@ -305,16 +307,20 @@ class EventsNotifier
   }
 
   Future<void> _trySyncEvents(List<EventModel> events) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncEvents(events);
+      await _notifications.syncEvents(events, accountUid: uid);
     } catch (error) {
       _showNotificationFailure(error);
     }
   }
 
   Future<void> _tryCancelEventReminder(int id) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.cancelEventReminder(id);
+      await _notifications.cancelEventReminder(id, accountUid: uid);
     } catch (_) {
       // The event was deleted; stale local reminder cleanup should not roll it back.
     }

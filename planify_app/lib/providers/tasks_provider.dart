@@ -361,8 +361,10 @@ class TasksNotifier
   }
 
   Future<void> _trySyncTask(TaskModel task) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncTask(task);
+      await _notifications.syncTask(task, accountUid: uid);
     } catch (error) {
       // Saving the task succeeded; notification scheduling should not roll it back.
       _showNotificationFailure(error);
@@ -370,16 +372,20 @@ class TasksNotifier
   }
 
   Future<void> _trySyncTasks(List<TaskModel> tasks) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncTasks(tasks);
+      await _notifications.syncTasks(tasks, accountUid: uid);
     } catch (error) {
       _showNotificationFailure(error);
     }
   }
 
   Future<void> _tryCancelTaskReminder(int id) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.cancelTaskReminder(id);
+      await _notifications.cancelTaskReminder(id, accountUid: uid);
     } catch (_) {
       // Deleting/archiving succeeded even if local reminder cleanup fails.
     }
