@@ -2,70 +2,252 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Planify stores application dates as ISO-8601 strings and writes a
+    // firebase_uid field on all private top-level records. `user_id` is a
+    // legacy display/model field and is never an authorization source.
     function signedIn() {
       return request.auth != null;
     }
 
-    function userDocumentPath() {
-      return /databases/$(database)/documents/users/$(request.auth.uid);
-    }
-
-    function matchesCurrentUserId(data) {
-      return exists(userDocumentPath())
-        && data.user_id == get(userDocumentPath()).data.id;
-    }
-
-    function matchesFirebaseUid(data) {
-      return data.firebase_uid == request.auth.uid;
-    }
-
     function ownsExisting() {
       return signedIn()
-        && (matchesFirebaseUid(resource.data)
-          || matchesCurrentUserId(resource.data));
+        && resource.data.firebase_uid is string
+        && resource.data.firebase_uid == request.auth.uid;
     }
 
-    function ownsIncoming() {
+    function ownsIncoming(data) {
       return signedIn()
-        && (matchesFirebaseUid(request.resource.data)
-          || matchesCurrentUserId(request.resource.data));
+        && data.firebase_uid is string
+        && data.firebase_uid == request.auth.uid;
+    }
+
+    function hasOnlyKeys(data, fields) {
+      return data.keys().hasOnly(fields);
+    }
+
+    function validText(data, field, maxLength) {
+      return data[field] is string
+        && data[field].size() > 0
+        && data[field].size() <= maxLength;
+    }
+
+    function optionalText(data, field, maxLength) {
+      return !(field in data)
+        || data[field] == null
+        || (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function optionalInt(data, field) {
+      return !(field in data) || data[field] == null || data[field] is int;
+    }
+
+    function dateString(value) {
+      return value is string && value.size() > 0 && value.size() <= 40;
+    }
+
+    function optionalDateString(data, field) {
+      return !(field in data) || data[field] == null || dateString(data[field]);
+    }
+
+    function validUserProfile(data) {
+      return hasOnlyKeys(data, [
+          'id', 'email', 'full_name', 'avatar_color', 'firebase_uid', 'occupation'
+        ])
+        && data.keys().hasAll(['id', 'email', 'full_name', 'avatar_color', 'firebase_uid'])
+        && data.id is int
+        && validText(data, 'email', 320)
+        && validText(data, 'full_name', 120)
+        && validText(data, 'avatar_color', 32)
+        && data.firebase_uid is string
+        && data.firebase_uid.size() <= 128
+        && optionalText(data, 'occupation', 80);
+    }
+
+    function validTask(data) {
+      return hasOnlyKeys(data, [
+          'id', 'user_id', 'firebase_uid', 'project_id', 'event_id',
+          'parent_task_id', 'title', 'description', 'priority', 'is_complete',
+          'tags', 'deadline', 'reminder_at', 'subtasks', 'source_note_id',
+          'source_note_line', 'created_at', 'updated_at'
+        ])
+        && data.keys().hasAll([
+          'id', 'user_id', 'firebase_uid', 'project_id', 'event_id',
+          'parent_task_id', 'title', 'description', 'priority', 'is_complete',
+          'tags', 'deadline', 'reminder_at', 'subtasks', 'created_at', 'updated_at'
+        ])
+        && data.id is int && data.id > 0
+        && data.user_id is int && data.user_id >= 0
+        && validText(data, 'title', 500)
+        && optionalText(data, 'description', 20000)
+        && data.priority in ['low', 'medium', 'high']
+        && data.is_complete is bool
+        && data.tags is list && data.tags.size() <= 50
+        && data.subtasks is list && data.subtasks.size() <= 100
+        && optionalInt(data, 'project_id')
+        && optionalInt(data, 'event_id')
+        && optionalInt(data, 'parent_task_id')
+        && optionalInt(data, 'source_note_id')
+        && optionalText(data, 'source_note_line', 1000)
+        && optionalDateString(data, 'deadline')
+        && optionalDateString(data, 'reminder_at')
+        && dateString(data.created_at) && dateString(data.updated_at);
+    }
+
+    function validNote(data) {
+      return hasOnlyKeys(data, [
+          'id', 'user_id', 'firebase_uid', 'project_id', 'title', 'content',
+          'color', 'is_pinned', 'folder', 'tags', 'created_at', 'updated_at'
+        ])
+        && data.keys().hasAll([
+          'id', 'user_id', 'firebase_uid', 'project_id', 'title', 'content',
+          'color', 'is_pinned', 'folder', 'tags', 'created_at', 'updated_at'
+        ])
+        && data.id is int && data.id > 0
+        && data.user_id is int && data.user_id >= 0
+        && validText(data, 'title', 500)
+        && optionalText(data, 'content', 100000)
+        && validText(data, 'color', 32)
+        && data.is_pinned is bool
+        && optionalText(data, 'folder', 120)
+        && data.tags is list && data.tags.size() <= 50
+        && optionalInt(data, 'project_id')
+        && dateString(data.created_at) && dateString(data.updated_at);
+    }
+
+    function validEvent(data) {
+      return hasOnlyKeys(data, [
+          'id', 'user_id', 'firebase_uid', 'project_id', 'title', 'description',
+          'location', 'color', 'start_time', 'end_time', 'reminder_at',
+          'all_day', 'repeat', 'repeat_interval', 'repeat_weekdays',
+          'recurrence_end', 'skipped_occurrences', 'created_at', 'updated_at'
+        ])
+        && data.keys().hasAll([
+          'id', 'user_id', 'firebase_uid', 'project_id', 'title', 'description',
+          'location', 'color', 'start_time', 'end_time', 'reminder_at',
+          'all_day', 'repeat', 'repeat_interval', 'repeat_weekdays',
+          'recurrence_end', 'skipped_occurrences', 'created_at', 'updated_at'
+        ])
+        && data.id is int && data.id > 0
+        && data.user_id is int && data.user_id >= 0
+        && validText(data, 'title', 500)
+        && optionalText(data, 'description', 20000)
+        && optionalText(data, 'location', 500)
+        && validText(data, 'color', 32)
+        && dateString(data.start_time) && dateString(data.end_time)
+        && optionalDateString(data, 'reminder_at')
+        && data.all_day is bool
+        && data.repeat in ['none', 'daily', 'weekly', 'monthly']
+        && data.repeat_interval is int
+        && data.repeat_interval > 0 && data.repeat_interval <= 366
+        && data.repeat_weekdays is list && data.repeat_weekdays.size() <= 7
+        && optionalDateString(data, 'recurrence_end')
+        && data.skipped_occurrences is list && data.skipped_occurrences.size() <= 366
+        && optionalInt(data, 'project_id')
+        && dateString(data.created_at) && dateString(data.updated_at);
+    }
+
+    function validProject(data) {
+      return hasOnlyKeys(data, [
+          'id', 'user_id', 'firebase_uid', 'parent_project_id', 'name',
+          'description', 'color', 'created_at', 'updated_at'
+        ])
+        && data.keys().hasAll([
+          'id', 'user_id', 'firebase_uid', 'parent_project_id', 'name',
+          'description', 'color', 'created_at', 'updated_at'
+        ])
+        && data.id is int && data.id > 0
+        && data.user_id is int && data.user_id >= 0
+        && validText(data, 'name', 200)
+        && optionalText(data, 'description', 10000)
+        && validText(data, 'color', 32)
+        && optionalInt(data, 'parent_project_id')
+        && dateString(data.created_at) && dateString(data.updated_at);
+    }
+
+    function validReminder(data) {
+      return hasOnlyKeys(data, [
+          'id', 'user_id', 'firebase_uid', 'title', 'notes', 'reminder_time',
+          'is_completed', 'repeat', 'created_at', 'updated_at'
+        ])
+        && data.keys().hasAll([
+          'id', 'user_id', 'firebase_uid', 'title', 'notes', 'reminder_time',
+          'is_completed', 'repeat', 'created_at', 'updated_at'
+        ])
+        && data.id is int && data.id > 0
+        && data.user_id is int && data.user_id >= 0
+        && validText(data, 'title', 500)
+        && optionalText(data, 'notes', 10000)
+        && dateString(data.reminder_time)
+        && data.is_completed is bool
+        && data.repeat in ['none', 'daily', 'weekly', 'monthly']
+        && dateString(data.created_at) && dateString(data.updated_at);
+    }
+
+    function validFocusSession(data) {
+      return hasOnlyKeys(data, [
+          'firebase_uid', 'user_id', 'project_id', 'task_id', 'start_time',
+          'end_time', 'duration_seconds'
+        ])
+        && data.keys().hasAll([
+          'firebase_uid', 'user_id', 'project_id', 'task_id', 'start_time',
+          'end_time', 'duration_seconds'
+        ])
+        && data.user_id is int && data.user_id >= 0
+        && optionalInt(data, 'project_id')
+        && optionalInt(data, 'task_id')
+        && dateString(data.start_time) && dateString(data.end_time)
+        && data.duration_seconds is int
+        && data.duration_seconds > 0 && data.duration_seconds <= 86400;
+    }
+
+    function validPrivateRecord(collection, data) {
+      return ownsIncoming(data)
+        && ((collection == 'tasks' && validTask(data))
+          || (collection == 'notes' && validNote(data))
+          || (collection == 'events' && validEvent(data))
+          || (collection == 'projects' && validProject(data))
+          || (collection == 'reminders' && validReminder(data))
+          || (collection == 'focus_sessions' && validFocusSession(data)));
+    }
+
+    function identityFieldsUnchanged() {
+      return request.resource.data.firebase_uid == resource.data.firebase_uid
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.user_id == resource.data.user_id
+        && request.resource.data.created_at == resource.data.created_at;
     }
 
     match /users/{userId} {
       allow read, delete: if signedIn() && userId == request.auth.uid;
-      allow create, update: if signedIn()
+
+      allow create: if signedIn()
         && userId == request.auth.uid
-        && matchesFirebaseUid(request.resource.data);
+        && validUserProfile(request.resource.data)
+        && request.resource.data.firebase_uid == request.auth.uid;
+
+      allow update: if signedIn()
+        && userId == request.auth.uid
+        && resource.data.firebase_uid == request.auth.uid
+        && validUserProfile(request.resource.data)
+        && request.resource.data.firebase_uid == resource.data.firebase_uid
+        && request.resource.data.id == resource.data.id;
     }
 
     match /{collection}/{docId} {
       allow read, delete: if collection in [
-          'tasks',
-          'notes',
-          'events',
-          'projects',
-          'reminders',
-          'focus_sessions'
+          'tasks', 'notes', 'events', 'projects', 'reminders', 'focus_sessions'
         ] && ownsExisting();
 
-      allow update: if collection in [
-          'tasks',
-          'notes',
-          'events',
-          'projects',
-          'reminders',
-          'focus_sessions'
-        ] && ownsExisting()
-        && ownsIncoming();
-
       allow create: if collection in [
-          'tasks',
-          'notes',
-          'events',
-          'projects',
-          'reminders',
-          'focus_sessions'
-        ] && ownsIncoming();
+          'tasks', 'notes', 'events', 'projects', 'reminders', 'focus_sessions'
+        ] && validPrivateRecord(collection, request.resource.data);
+
+      allow update: if collection in [
+          'tasks', 'notes', 'events', 'projects', 'reminders'
+        ]
+        && ownsExisting()
+        && validPrivateRecord(collection, request.resource.data)
+        && identityFieldsUnchanged();
     }
   }
 }

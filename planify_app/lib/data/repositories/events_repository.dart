@@ -27,14 +27,17 @@ class EventsRepository {
     }
 
     try {
+      _requireActiveUid();
       Query query = ownedQuery(_firestore, 'events', _uid);
       final snapshot = await query.get();
+      _requireActiveUid();
       final events = snapshot.docs
           .map((doc) => EventModel.fromJson(doc.data() as Map<String, dynamic>))
           .toList();
       await _writeCache(events);
       return _applyRange(events, start: start, end: end);
     } catch (_) {
+      _requireActiveUid();
       final cached = await _readCache();
       if (cached.isNotEmpty) {
         return _applyRange(cached, start: start, end: end);
@@ -113,11 +116,13 @@ class EventsRepository {
       return event;
     }
 
+    _requireActiveUid();
     await _firestore
         .collection('events')
         .doc(id.toString())
         .set(withFirebaseOwner(event.toJson(), _uid));
 
+    _requireActiveUid();
     final cached = await _readCache();
     await _writeCache([event, ...cached.where((item) => item.id != id)]);
     return event;
@@ -133,8 +138,11 @@ class EventsRepository {
 
     updates['updated_at'] = DateTime.now().toIso8601String();
     updates['firebase_uid'] = _uid;
+    _requireActiveUid();
     await _firestore.collection('events').doc(id.toString()).update(updates);
+    _requireActiveUid();
     final doc = await _firestore.collection('events').doc(id.toString()).get();
+    _requireActiveUid();
     final event = EventModel.fromJson(doc.data()!);
 
     final cached = await _readCache();
@@ -149,7 +157,9 @@ class EventsRepository {
       return;
     }
 
+    _requireActiveUid();
     await _firestore.collection('events').doc(id.toString()).delete();
+    _requireActiveUid();
 
     final cached = await _readCache();
     await _writeCache(cached.where((event) => event.id != id).toList());
@@ -166,6 +176,12 @@ class EventsRepository {
       CacheKeys.events(_uid),
     );
     return cached.map(EventModel.fromJson).toList();
+  }
+
+  String _requireActiveUid() {
+    final uid = requireActiveFirebaseUid(_auth, _uid);
+    _cache.ensureSessionCurrent(_session!);
+    return uid;
   }
 
   Future<List<EventModel>> _readOrSeedCache() async {

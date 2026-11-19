@@ -46,6 +46,7 @@ class InsightsRepository {
       ownedQuery(_firestore, 'events', uid).limit(5).get(),
       ownedQuery(_firestore, 'notes', uid).limit(5).get(),
     ]);
+    _requireSameUid(uid);
     final tasksSnap = snapshots[0];
     final eventsSnap = snapshots[1];
     final notesSnap = snapshots[2];
@@ -68,11 +69,13 @@ class InsightsRepository {
   }
 
   Future<ProjectAnalyticsModel> getProjectAnalytics(int projectId) async {
+    final uid = _requireUid();
     final tasksSnap = await ownedQuery(
       _firestore,
       'tasks',
-      _requireUid(),
+      uid,
     ).where('project_id', isEqualTo: projectId).get();
+    _requireSameUid(uid);
 
     int completed = 0;
     for (var doc in tasksSnap.docs) {
@@ -101,6 +104,7 @@ class InsightsRepository {
       ownedQuery(_firestore, 'events', uid).get(),
       ownedQuery(_firestore, 'projects', uid).get(),
     ]);
+    _requireSameUid(uid);
     final tasksSnap = snapshots[0];
     final notesSnap = snapshots[1];
     final eventsSnap = snapshots[2];
@@ -246,9 +250,11 @@ class InsightsRepository {
   }
 
   String _requireUid() {
-    final uid = _uid;
-    if (uid == null) throw Exception('Not logged in');
-    return uid;
+    return requireActiveFirebaseUid(_auth, _uid);
+  }
+
+  void _requireSameUid(String expectedUid) {
+    requireActiveFirebaseUid(_auth, expectedUid);
   }
 }
 

@@ -36,9 +36,11 @@ class TasksRepository {
       );
     }
     try {
+      _requireActiveUid();
       Query<Map<String, dynamic>> query = ownedQuery(_firestore, 'tasks', _uid);
 
       final snapshot = await query.get();
+      _requireActiveUid();
       var tasks =
           snapshot.docs.map((doc) => TaskModel.fromJson(doc.data())).toList();
 
@@ -54,11 +56,14 @@ class TasksRepository {
 
       if (priority == null && projectId == null && isComplete == null) {
         await _writeCache(tasks);
+        _requireActiveUid();
       }
       return tasks;
     } catch (_) {
+      _requireActiveUid();
       final cached = await _readCache();
       if (cached.isNotEmpty) {
+        _requireActiveUid();
         return _applyFilters(
           cached,
           priority: priority,
@@ -111,13 +116,16 @@ class TasksRepository {
       return task;
     }
 
+    _requireActiveUid();
     await _firestore
         .collection('tasks')
         .doc(id.toString())
         .set(withFirebaseOwner(task.toJson(), _uid));
 
+    _requireActiveUid();
     final cached = await _readCache();
     await _writeCache([task, ...cached.where((item) => item.id != task.id)]);
+    _requireActiveUid();
     return task;
   }
 
@@ -137,9 +145,12 @@ class TasksRepository {
 
     updates['updated_at'] = DateTime.now().toIso8601String();
     updates['firebase_uid'] = _uid;
+    _requireActiveUid();
     await _firestore.collection('tasks').doc(id.toString()).update(updates);
 
+    _requireActiveUid();
     final doc = await _firestore.collection('tasks').doc(id.toString()).get();
+    _requireActiveUid();
     final task = TaskModel.fromJson(doc.data()!);
 
     final cached = await _readCache();
@@ -147,6 +158,7 @@ class TasksRepository {
       for (final item in cached)
         if (item.id == id) task else item,
     ]);
+    _requireActiveUid();
     return task;
   }
 
@@ -157,9 +169,12 @@ class TasksRepository {
       return;
     }
 
+    _requireActiveUid();
     await _firestore.collection('tasks').doc(id.toString()).delete();
+    _requireActiveUid();
     final cached = await _readCache();
     await _writeCache(cached.where((item) => item.id != id).toList());
+    _requireActiveUid();
   }
 
   Future<TaskModel> archiveTask(int id) async {
@@ -171,12 +186,17 @@ class TasksRepository {
       throw Exception('Task $id not found');
     }
 
+    _requireActiveUid();
     final doc = await _firestore.collection('tasks').doc(id.toString()).get();
+    _requireActiveUid();
     final task = TaskModel.fromJson(doc.data()!);
+    _requireActiveUid();
     await _firestore.collection('tasks').doc(id.toString()).delete();
+    _requireActiveUid();
 
     final cached = await _readCache();
     await _writeCache(cached.where((item) => item.id != id).toList());
+    _requireActiveUid();
     return task;
   }
 
@@ -194,9 +214,11 @@ class TasksRepository {
       return updated;
     }
 
+    _requireActiveUid();
     final docRef = _firestore.collection('tasks').doc(id.toString());
-    return await _firestore.runTransaction((transaction) async {
+    final updatedTask = await _firestore.runTransaction((transaction) async {
       final snapshot = await transaction.get(docRef);
+      _requireActiveUid();
       if (!snapshot.exists) throw Exception('Task $id not found');
 
       final currentData = snapshot.data()!;
@@ -212,13 +234,18 @@ class TasksRepository {
       currentData['updated_at'] = DateTime.now().toIso8601String();
       final updatedTask = TaskModel.fromJson(currentData);
 
-      final cached = await _readCache();
-      await _writeCache([
-        for (final item in cached)
-          if (item.id == id) updatedTask else item,
-      ]);
       return updatedTask;
     });
+    _requireActiveUid();
+    final cached = await _readCache();
+    _requireActiveUid();
+    await _writeCache([
+      for (final item in cached)
+        if (item.id == id) updatedTask else item,
+    ]);
+    _requireActiveUid();
+    _requireActiveUid();
+    return updatedTask;
   }
 
   Future<TaskModel> patchSubtasks(
@@ -238,13 +265,16 @@ class TasksRepository {
       return updated;
     }
 
+    _requireActiveUid();
     await _firestore.collection('tasks').doc(id.toString()).update({
       'subtasks': subtasks,
       'updated_at': DateTime.now().toIso8601String(),
       'firebase_uid': _uid,
     });
 
+    _requireActiveUid();
     final doc = await _firestore.collection('tasks').doc(id.toString()).get();
+    _requireActiveUid();
     final task = TaskModel.fromJson(doc.data()!);
 
     final cached = await _readCache();
@@ -252,6 +282,7 @@ class TasksRepository {
       for (final item in cached)
         if (item.id == id) task else item,
     ]);
+    _requireActiveUid();
     return task;
   }
 
@@ -284,13 +315,16 @@ class TasksRepository {
       return task;
     }
 
+    _requireActiveUid();
     await _firestore
         .collection('tasks')
         .doc(id.toString())
         .set(withFirebaseOwner(task.toJson(), _uid));
 
+    _requireActiveUid();
     final cached = await _readCache();
     await _writeCache([task, ...cached.where((item) => item.id != task.id)]);
+    _requireActiveUid();
     return task;
   }
 
@@ -305,6 +339,12 @@ class TasksRepository {
       CacheKeys.tasks(_uid),
     );
     return cached.map(TaskModel.fromJson).toList();
+  }
+
+  String _requireActiveUid() {
+    final uid = requireActiveFirebaseUid(_auth, _uid);
+    _cache.ensureSessionCurrent(_session!);
+    return uid;
   }
 
   Future<List<TaskModel>> _readOrSeedCache() async {

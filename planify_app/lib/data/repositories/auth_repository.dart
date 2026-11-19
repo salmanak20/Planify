@@ -54,15 +54,18 @@ class AuthRepository {
     final user = credential.user;
     if (user == null) throw StateError('Firebase did not return a user.');
     await user.updateDisplayName(fullName);
+    _requireCurrentUser(user.uid);
     final profile = UserModel(
       id: stableUserIdFromUid(user.uid),
       email: email,
       fullName: fullName,
       avatarColor: '#435f92',
     );
+    _requireCurrentUser(user.uid);
     await _firestore.collection('users').doc(user.uid).set(
           _userDocument(profile, user.uid, occupation: occupation),
         );
+    _requireCurrentUser(user.uid);
     await _saveCacheForCurrentUser(profile, user.uid);
     return profile;
   }
@@ -142,9 +145,7 @@ class AuthRepository {
   Future<bool> isLoggedIn() async => currentUserUid != null;
 
   Future<void> _saveCacheForCurrentUser(UserModel profile, String uid) async {
-    if (_firebaseAuth.currentUser?.uid != uid) {
-      throw const ProfileOwnershipException();
-    }
+    _requireCurrentUser(uid);
     final session = _cache.captureSession(uid);
     await _cache.saveJsonMapForUser(session, CacheKeys.profile(uid), {
       ...profile.toJson(),
@@ -152,6 +153,12 @@ class AuthRepository {
     });
     if (_firebaseAuth.currentUser?.uid != uid) {
       await clearCachedUser(expectedUid: uid);
+      throw const ProfileOwnershipException();
+    }
+  }
+
+  void _requireCurrentUser(String expectedUid) {
+    if (_firebaseAuth.currentUser?.uid != expectedUid) {
       throw const ProfileOwnershipException();
     }
   }

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planify_app/core/utils/firebase_identity.dart';
 import 'package:planify_app/providers/account_scope_provider.dart';
@@ -70,6 +71,7 @@ class GlobalSearchResponseModel {
 class SearchNotifier
     extends AccountScopedStateNotifier<AsyncValue<GlobalSearchResponseModel?>> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final String? _accountUid;
   String _lastQuery = '';
 
@@ -89,6 +91,7 @@ class SearchNotifier
         state = const AsyncData(null);
         return;
       }
+      requireActiveFirebaseUid(_auth, uid);
       final snapshots = await Future.wait([
         ownedQuery(_firestore, 'tasks', uid).get(),
         ownedQuery(_firestore, 'notes', uid).get(),
@@ -100,7 +103,9 @@ class SearchNotifier
       final eventsSnap = snapshots[2];
       final projectsSnap = snapshots[3];
 
-      if (!mounted || _lastQuery != query) return;
+      if (!mounted || _lastQuery != query || currentFirebaseUid(_auth) != uid) {
+        return;
+      }
 
       final tasks = tasksSnap.docs
           .where((doc) =>
@@ -137,8 +142,11 @@ class SearchNotifier
         projects: projects,
       ));
     } catch (e, st) {
-      if (_lastQuery == query) {
-        state = AsyncError(e, st);
+      if (_lastQuery == query &&
+          _accountUid != null &&
+          currentFirebaseUid(_auth) == _accountUid &&
+          mounted) {
+        state = AsyncError(Exception('Search could not be completed.'), st);
       }
     }
   }

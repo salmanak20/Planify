@@ -33,5 +33,5 @@ String planifyFirebaseErrorMessage(Object error) {
     return _networkErrorMessage;
   }
 
-  return error.toString();
+  return 'Planify could not load this information. Please try again.';
 }
