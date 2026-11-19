@@ -194,24 +194,30 @@ class RemindersNotifier
   }
 
   Future<void> _trySyncReminder(ReminderModel reminder) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncReminder(reminder);
+      await _notifications.syncReminder(reminder, accountUid: uid);
     } catch (error) {
       _showNotificationFailure(error);
     }
   }
 
   Future<void> _tryCancelReminder(int id) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.cancelReminder(id);
+      await _notifications.cancelReminder(id, accountUid: uid);
     } catch (_) {
       // Deleting succeeded even if local reminder cleanup fails.
     }
   }
 
   Future<void> _trySyncReminders(List<ReminderModel> reminders) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncReminders(reminders);
+      await _notifications.syncReminders(reminders, accountUid: uid);
     } catch (error) {
       _showNotificationFailure(error);
     }

@@ -37,6 +37,8 @@ class NotificationsService {
       FlutterLocalNotificationsPlugin();
   bool _initialized = false;
   Future<void>? _initializing;
+  String? _activeAccountUid;
+  Future<void> _accountOperations = Future<void>.value();
 
   static const _incomingAndroidDetails = AndroidNotificationDetails(
     'planify_incoming_reminders_v2',
@@ -159,10 +161,15 @@ class NotificationsService {
     }
     await _requestExactAlarmPermissionIfNeeded(androidPlugin);
 
-    await _plugin
+    final granted = await _plugin
         .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(alert: true, badge: true, sound: true);
+    if (granted == false) {
+      throw const NotificationSchedulingException(
+        'Notifications are disabled for Planify.',
+      );
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -200,15 +207,29 @@ class NotificationsService {
     }
   }
 
-  Future<void> syncTasks(List<TaskModel> tasks) async {
-    for (final task in tasks) {
-      await syncTask(task);
-    }
+  Future<void> syncTasks(
+    List<TaskModel> tasks, {
+    required String accountUid,
+  }) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      for (final task in tasks) {
+        if (accountUid != _activeAccountUid) return;
+        await _syncTask(task);
+      }
+    });
   }
 
-  Future<void> syncTask(TaskModel task) async {
+  Future<void> syncTask(TaskModel task, {required String accountUid}) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      await _syncTask(task);
+    });
+  }
+
+  Future<void> _syncTask(TaskModel task) async {
     await initialize();
-    await cancelTaskReminder(task.id);
+    await _cancelTaskReminder(task.id);
     final reminders = _buildTaskReminders(task);
     if (reminders.isEmpty) return;
 
@@ -218,7 +239,17 @@ class NotificationsService {
     }
   }
 
-  Future<void> cancelTaskReminder(int taskId) async {
+  Future<void> cancelTaskReminder(
+    int taskId, {
+    required String accountUid,
+  }) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      await _cancelTaskReminder(taskId);
+    });
+  }
+
+  Future<void> _cancelTaskReminder(int taskId) async {
     await initialize();
     await _cancelReminderIds([
       _taskIncomingReminderId(taskId),
@@ -227,21 +258,45 @@ class NotificationsService {
     ]);
   }
 
-  Future<void> syncEvents(List<EventModel> events) async {
-    for (final event in events) {
-      await syncEvent(event);
-    }
+  Future<void> syncEvents(
+    List<EventModel> events, {
+    required String accountUid,
+  }) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      for (final event in events) {
+        if (accountUid != _activeAccountUid) return;
+        await _syncEvent(event);
+      }
+    });
   }
 
-  Future<void> syncReminders(List<ReminderModel> reminders) async {
-    for (final reminder in reminders) {
-      await syncReminder(reminder);
-    }
+  Future<void> syncReminders(
+    List<ReminderModel> reminders, {
+    required String accountUid,
+  }) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      for (final reminder in reminders) {
+        if (accountUid != _activeAccountUid) return;
+        await _syncReminder(reminder);
+      }
+    });
   }
 
-  Future<void> syncReminder(ReminderModel reminder) async {
+  Future<void> syncReminder(
+    ReminderModel reminder, {
+    required String accountUid,
+  }) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      await _syncReminder(reminder);
+    });
+  }
+
+  Future<void> _syncReminder(ReminderModel reminder) async {
     await initialize();
-    await cancelReminder(reminder.id);
+    await _cancelReminder(reminder.id);
     final reminders = _buildStandaloneReminders(reminder);
     if (reminders.isEmpty) return;
 
@@ -251,7 +306,17 @@ class NotificationsService {
     }
   }
 
-  Future<void> cancelReminder(int reminderId) async {
+  Future<void> cancelReminder(
+    int reminderId, {
+    required String accountUid,
+  }) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      await _cancelReminder(reminderId);
+    });
+  }
+
+  Future<void> _cancelReminder(int reminderId) async {
     await initialize();
     await _cancelReminderIds([
       _standaloneReminderId(reminderId),
@@ -261,9 +326,16 @@ class NotificationsService {
     ]);
   }
 
-  Future<void> syncEvent(EventModel event) async {
+  Future<void> syncEvent(EventModel event, {required String accountUid}) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      await _syncEvent(event);
+    });
+  }
+
+  Future<void> _syncEvent(EventModel event) async {
     await initialize();
-    await cancelEventReminder(event.id);
+    await _cancelEventReminder(event.id);
     final reminders = _buildEventReminders(event);
     if (reminders.isEmpty) return;
 
@@ -273,7 +345,17 @@ class NotificationsService {
     }
   }
 
-  Future<void> cancelEventReminder(int eventId) async {
+  Future<void> cancelEventReminder(
+    int eventId, {
+    required String accountUid,
+  }) async {
+    await _serializeAccountOperation(() async {
+      if (accountUid != _activeAccountUid) return;
+      await _cancelEventReminder(eventId);
+    });
+  }
+
+  Future<void> _cancelEventReminder(int eventId) async {
     await initialize();
     await _cancelReminderIds([
       _eventIncomingReminderId(eventId),
@@ -291,7 +373,31 @@ class NotificationsService {
     required String uid,
     required LocalCacheService cache,
   }) async {
+    if (_activeAccountUid != uid) return;
+    await _serializeAccountOperation(() async {
+      await _restoreCachedReminders(uid: uid, cache: cache);
+    });
+  }
+
+  /// Updates the authenticated account used by notification scheduling.
+  /// On account changes, only Planify-managed reminder IDs are removed.
+  Future<void> activateAccount(String? uid) {
+    if (_activeAccountUid == uid && uid != null) {
+      return Future<void>.value();
+    }
+    _activeAccountUid = uid;
+    return _serializeAccountOperation(() async {
+      await initialize();
+      await _cancelManagedReminderNotifications();
+    });
+  }
+
+  Future<void> _restoreCachedReminders({
+    required String uid,
+    required LocalCacheService cache,
+  }) async {
     await initialize();
+    if (_activeAccountUid != uid) return;
     final session = cache.captureSession(uid);
     final tasks = _readCachedTasks(cache, session);
     final events = _readCachedEvents(cache, session);
@@ -300,6 +406,8 @@ class NotificationsService {
     final cachedTasks = results[0] as List<TaskModel>;
     final cachedEvents = results[1] as List<EventModel>;
     final cachedReminders = results[2] as List<ReminderModel>;
+
+    if (_activeAccountUid != uid) return;
 
     await _prunePendingReminderRequests(
       activeReminderIds: {
@@ -312,9 +420,33 @@ class NotificationsService {
       },
     );
 
-    await syncTasks(cachedTasks);
-    await syncEvents(cachedEvents);
-    await syncReminders(cachedReminders);
+    for (final task in cachedTasks) {
+      if (_activeAccountUid != uid) return;
+      await _syncTask(task);
+    }
+    for (final event in cachedEvents) {
+      if (_activeAccountUid != uid) return;
+      await _syncEvent(event);
+    }
+    for (final reminder in cachedReminders) {
+      if (_activeAccountUid != uid) return;
+      await _syncReminder(reminder);
+    }
+  }
+
+  Future<void> _serializeAccountOperation(Future<void> Function() operation) {
+    final next = _accountOperations.then((_) => operation());
+    _accountOperations = next.catchError((Object _) {});
+    return next;
+  }
+
+  Future<void> _cancelManagedReminderNotifications() async {
+    final pending = await _plugin.pendingNotificationRequests();
+    for (final request in pending) {
+      if (_isManagedReminderId(request.id)) {
+        await _plugin.cancel(request.id);
+      }
+    }
   }
 
   Future<void> _scheduleNotification(_ScheduledReminder reminder) async {
