@@ -9,6 +9,7 @@ import 'package:planify_app/core/constants/app_flags.dart';
 import 'package:planify_app/core/services/audio_service.dart';
 import 'package:planify_app/core/utils/firebase_identity.dart';
 import 'package:planify_app/data/models/task_model.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
 
 enum TimerPhase { focus, shortBreak, longBreak }
 
@@ -72,9 +73,21 @@ class FocusTimerState {
 class FocusTimerNotifier extends StateNotifier<FocusTimerState> {
   Timer? _timer;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  String? _accountUid;
+  String? _focusSessionUid;
 
-  FocusTimerNotifier() : super(const FocusTimerState()) {
+  FocusTimerNotifier([this._accountUid]) : super(const FocusTimerState()) {
     _audioPlayer.setReleaseMode(ReleaseMode.loop);
+  }
+
+  void setAccountUid(String? uid) {
+    if (_accountUid == uid) return;
+    _accountUid = uid;
+    _focusSessionUid = null;
+    _timer?.cancel();
+    _timer = null;
+    _audioPlayer.stop();
+    state = const FocusTimerState();
   }
 
   static const _phaseDurations = {
@@ -85,6 +98,7 @@ class FocusTimerNotifier extends StateNotifier<FocusTimerState> {
 
   void start() {
     if (state.isRunning) return;
+    _focusSessionUid = state.phase == TimerPhase.focus ? _accountUid : null;
     SystemSound.play(SystemSoundType.click);
     state = state.copyWith(
       isRunning: true,
@@ -186,8 +200,9 @@ class FocusTimerNotifier extends StateNotifier<FocusTimerState> {
     if (state.phase == TimerPhase.focus) {
       if (state.remaining.inSeconds <= 5) {
         // If naturally finished, log it
-        _logSession(_phaseDurations[TimerPhase.focus]!);
+        _logSession(_phaseDurations[TimerPhase.focus]!, _focusSessionUid);
       }
+      _focusSessionUid = null;
       sessions++;
       next = sessions % 4 == 0 ? TimerPhase.longBreak : TimerPhase.shortBreak;
     } else {
@@ -235,22 +250,21 @@ class FocusTimerNotifier extends StateNotifier<FocusTimerState> {
     return diff.isNegative ? Duration.zero : diff;
   }
 
-  Future<void> _logSession(Duration duration) async {
-    if (kEnableOfflineTestingMode) return;
+  Future<void> _logSession(Duration duration, String? ownerUid) async {
+    if (kEnableOfflineTestingMode || ownerUid == null) return;
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final now = DateTime.now();
-        await FirebaseFirestore.instance.collection('focus_sessions').add({
-          'firebase_uid': user.uid,
-          'user_id': stableUserIdFromUid(user.uid),
-          'project_id': state.currentTask?.projectId,
-          'task_id': state.currentTask?.id,
-          'start_time': now.subtract(duration).toIso8601String(),
-          'end_time': now.toIso8601String(),
-          'duration_seconds': duration.inSeconds,
-        });
-      }
+      requireActiveFirebaseUid(FirebaseAuth.instance, ownerUid);
+      final now = DateTime.now();
+      await FirebaseFirestore.instance.collection('focus_sessions').add({
+        'firebase_uid': ownerUid,
+        'user_id': stableUserIdFromUid(ownerUid),
+        'project_id': state.currentTask?.projectId,
+        'task_id': state.currentTask?.id,
+        'start_time': now.subtract(duration).toIso8601String(),
+        'end_time': now.toIso8601String(),
+        'duration_seconds': duration.inSeconds,
+      });
+      requireActiveFirebaseUid(FirebaseAuth.instance, ownerUid);
     } catch (_) {
       // Ignore if offline
     }
@@ -266,5 +280,11 @@ class FocusTimerNotifier extends StateNotifier<FocusTimerState> {
 
 final focusTimerProvider =
     StateNotifierProvider<FocusTimerNotifier, FocusTimerState>(
-  (ref) => FocusTimerNotifier(),
+  (ref) {
+    final notifier = FocusTimerNotifier(ref.read(activeAccountUidProvider));
+    ref.listen<String?>(activeAccountUidProvider, (_, uid) {
+      notifier.setAccountUid(uid);
+    });
+    return notifier;
+  },
 );

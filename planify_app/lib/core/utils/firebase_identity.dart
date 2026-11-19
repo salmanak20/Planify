@@ -3,6 +3,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 String? currentFirebaseUid(FirebaseAuth auth) => auth.currentUser?.uid;
 
+class FirebaseSessionChangedException implements Exception {
+  const FirebaseSessionChangedException();
+
+  @override
+  String toString() =>
+      'The authenticated account changed during this operation.';
+}
+
+String requireActiveFirebaseUid(FirebaseAuth auth, String? expectedUid) {
+  return requireExpectedFirebaseUid(expectedUid, currentFirebaseUid(auth));
+}
+
+String requireExpectedFirebaseUid(String? expectedUid, String? activeUid) {
+  if (expectedUid == null || activeUid != expectedUid) {
+    throw const FirebaseSessionChangedException();
+  }
+  return expectedUid;
+}
+
 int stableUserIdFromUid(String uid) {
   const fnvPrime = 16777619;
   var hash = 2166136261;

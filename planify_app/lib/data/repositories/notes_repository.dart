@@ -39,8 +39,10 @@ class NotesRepository {
     }
 
     try {
+      _requireActiveUid();
       Query query = ownedQuery(_firestore, 'notes', _uid);
       final snapshot = await query.get();
+      _requireActiveUid();
       final notes = snapshot.docs
           .map((doc) => NoteModel.fromJson(doc.data() as Map<String, dynamic>))
           .toList();
@@ -53,6 +55,7 @@ class NotesRepository {
         projectId: projectId,
       );
     } catch (_) {
+      _requireActiveUid();
       final cached = await _readCache();
       if (cached.isNotEmpty) {
         return _applyFilters(
@@ -134,11 +137,13 @@ class NotesRepository {
       return note;
     }
 
+    _requireActiveUid();
     await _firestore
         .collection('notes')
         .doc(id.toString())
         .set(withFirebaseOwner(note.toJson(), _uid));
 
+    _requireActiveUid();
     final cached = await _readCache();
     await _writeCache([note, ...cached.where((item) => item.id != id)]);
     return note;
@@ -154,8 +159,11 @@ class NotesRepository {
 
     updates['updated_at'] = DateTime.now().toIso8601String();
     updates['firebase_uid'] = _uid;
+    _requireActiveUid();
     await _firestore.collection('notes').doc(id.toString()).update(updates);
+    _requireActiveUid();
     final doc = await _firestore.collection('notes').doc(id.toString()).get();
+    _requireActiveUid();
     final note = NoteModel.fromJson(doc.data()!);
 
     final cached = await _readCache();
@@ -170,7 +178,9 @@ class NotesRepository {
       return;
     }
 
+    _requireActiveUid();
     await _firestore.collection('notes').doc(id.toString()).delete();
+    _requireActiveUid();
 
     final cached = await _readCache();
     await _writeCache(cached.where((note) => note.id != id).toList());
@@ -190,14 +200,18 @@ class NotesRepository {
     }
 
     final docRef = _firestore.collection('notes').doc(id.toString());
+    _requireActiveUid();
     final doc = await docRef.get();
+    _requireActiveUid();
     if (!doc.exists) throw Exception('Note $id not found');
     final current = NoteModel.fromJson(doc.data()!);
     final toggled = current.copyWith(
       isPinned: !current.isPinned,
       updatedAt: DateTime.now(),
     );
+    _requireActiveUid();
     await docRef.update(withFirebaseOwner(toggled.toJson(), _uid));
+    _requireActiveUid();
 
     final cached = await _readCache();
     await _writeCache(_replaceNote(cached, toggled));
@@ -225,10 +239,12 @@ class NotesRepository {
       createdAt: now,
       updatedAt: now,
     );
+    _requireActiveUid();
     await _firestore
         .collection('tasks')
         .doc(id.toString())
         .set(withFirebaseOwner(task.toJson(), _requireUid()));
+    _requireActiveUid();
     return task;
   }
 
@@ -249,6 +265,12 @@ class NotesRepository {
       CacheKeys.notes(_uid),
     );
     return cached.map(NoteModel.fromJson).toList();
+  }
+
+  String _requireActiveUid() {
+    final uid = requireActiveFirebaseUid(_auth, _uid);
+    _cache.ensureSessionCurrent(_session!);
+    return uid;
   }
 
   Future<List<NoteModel>> _readOrSeedCache() async {

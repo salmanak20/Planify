@@ -27,8 +27,10 @@ class RemindersRepository {
     }
 
     try {
+      _requireActiveUid();
       Query query = ownedQuery(_firestore, 'reminders', _uid);
       final snapshot = await query.get();
+      _requireActiveUid();
       final reminders = snapshot.docs
           .map((doc) =>
               ReminderModel.fromJson(doc.data() as Map<String, dynamic>))
@@ -36,6 +38,7 @@ class RemindersRepository {
       await _writeCache(reminders);
       return _applyFilters(reminders, isCompleted: isCompleted);
     } catch (_) {
+      _requireActiveUid();
       final cached = await _readCache();
       if (cached.isNotEmpty) {
         return _applyFilters(cached, isCompleted: isCompleted);
@@ -82,11 +85,13 @@ class RemindersRepository {
       return reminder;
     }
 
+    _requireActiveUid();
     await _firestore
         .collection('reminders')
         .doc(id.toString())
         .set(withFirebaseOwner(reminder.toJson(), _uid));
 
+    _requireActiveUid();
     final cached = await _readCache();
     await _writeCache([reminder, ...cached.where((item) => item.id != id)]);
     return reminder;
@@ -103,9 +108,12 @@ class RemindersRepository {
 
     updates['updated_at'] = DateTime.now().toIso8601String();
     updates['firebase_uid'] = _uid;
+    _requireActiveUid();
     await _firestore.collection('reminders').doc(id.toString()).update(updates);
+    _requireActiveUid();
     final doc =
         await _firestore.collection('reminders').doc(id.toString()).get();
+    _requireActiveUid();
     final reminder = ReminderModel.fromJson(doc.data()!);
 
     final cached = await _readCache();
@@ -127,14 +135,18 @@ class RemindersRepository {
     }
 
     final docRef = _firestore.collection('reminders').doc(id.toString());
+    _requireActiveUid();
     final doc = await docRef.get();
+    _requireActiveUid();
     if (!doc.exists) throw Exception('Reminder $id not found');
     final current = ReminderModel.fromJson(doc.data()!);
     final toggled = current.copyWith(
       isCompleted: !current.isCompleted,
       updatedAt: DateTime.now(),
     );
+    _requireActiveUid();
     await docRef.update(withFirebaseOwner(toggled.toJson(), _uid));
+    _requireActiveUid();
 
     final cached = await _readCache();
     await _writeCache(_replaceReminder(cached, toggled));
@@ -150,7 +162,9 @@ class RemindersRepository {
       return;
     }
 
+    _requireActiveUid();
     await _firestore.collection('reminders').doc(id.toString()).delete();
+    _requireActiveUid();
 
     final cached = await _readCache();
     await _writeCache(
@@ -169,6 +183,12 @@ class RemindersRepository {
       CacheKeys.reminders(_uid),
     );
     return cached.map(ReminderModel.fromJson).toList();
+  }
+
+  String _requireActiveUid() {
+    final uid = requireActiveFirebaseUid(_auth, _uid);
+    _cache.ensureSessionCurrent(_session!);
+    return uid;
   }
 
   Future<List<ReminderModel>> _readOrSeedCache() async {

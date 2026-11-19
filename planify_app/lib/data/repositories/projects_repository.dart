@@ -29,7 +29,9 @@ class ProjectsRepository {
     }
 
     try {
+      _requireActiveUid();
       final snapshot = await ownedQuery(_firestore, 'projects', _uid).get();
+      _requireActiveUid();
       final projects = snapshot.docs
           .map((doc) => ProjectModel.fromJson(doc.data()))
           .toList()
@@ -37,6 +39,7 @@ class ProjectsRepository {
       await _writeCache(projects);
       return projects;
     } catch (_) {
+      _requireActiveUid();
       final cached = await _readCache();
       if (cached.isNotEmpty) return cached;
       rethrow;
@@ -67,11 +70,13 @@ class ProjectsRepository {
       return project;
     }
 
+    _requireActiveUid();
     await _firestore
         .collection('projects')
         .doc(id.toString())
         .set(withFirebaseOwner(project.toJson(), _uid));
 
+    _requireActiveUid();
     final cached = await _readCache();
     await _writeCache([project, ...cached.where((item) => item.id != id)]);
     return project;
@@ -88,9 +93,12 @@ class ProjectsRepository {
 
     updates['updated_at'] = DateTime.now().toIso8601String();
     updates['firebase_uid'] = _uid;
+    _requireActiveUid();
     await _firestore.collection('projects').doc(id.toString()).update(updates);
+    _requireActiveUid();
     final doc =
         await _firestore.collection('projects').doc(id.toString()).get();
+    _requireActiveUid();
     final project = ProjectModel.fromJson(doc.data()!);
 
     final cached = await _readCache();
@@ -108,7 +116,9 @@ class ProjectsRepository {
     final uid = _uid;
     final batch = _firestore.batch();
 
+    _requireActiveUid();
     final tasksSnap = await ownedQuery(_firestore, 'tasks', uid).get();
+    _requireActiveUid();
     for (final doc in tasksSnap.docs) {
       final data = doc.data();
       if (data['project_id'] == id) {
@@ -121,6 +131,7 @@ class ProjectsRepository {
     }
 
     final notesSnap = await ownedQuery(_firestore, 'notes', uid).get();
+    _requireActiveUid();
     for (final doc in notesSnap.docs) {
       final data = doc.data();
       if (data['project_id'] == id) {
@@ -133,14 +144,18 @@ class ProjectsRepository {
     }
 
     batch.delete(_firestore.collection('projects').doc(id.toString()));
+    _requireActiveUid();
     await batch.commit();
 
+    _requireActiveUid();
     final cached = await _readCache();
     await _writeCache(cached.where((project) => project.id != id).toList());
   }
 
   Future<List<TaskModel>> getProjectTasks(int id) async {
-    final snapshot = await ownedQuery(_firestore, 'tasks', _requireUid()).get();
+    final uid = _requireActiveUid();
+    final snapshot = await ownedQuery(_firestore, 'tasks', uid).get();
+    _requireActiveUid();
     return snapshot.docs
         .map((doc) => TaskModel.fromJson(doc.data()))
         .where((task) => task.projectId == id)
@@ -148,16 +163,18 @@ class ProjectsRepository {
   }
 
   Future<List<NoteModel>> getProjectNotes(int id) async {
-    final snapshot = await ownedQuery(_firestore, 'notes', _requireUid()).get();
+    final uid = _requireActiveUid();
+    final snapshot = await ownedQuery(_firestore, 'notes', uid).get();
+    _requireActiveUid();
     return snapshot.docs
         .map((doc) => NoteModel.fromJson(doc.data()))
         .where((note) => note.projectId == id)
         .toList();
   }
 
-  String _requireUid() {
-    final uid = _uid;
-    if (uid == null) throw Exception('Not logged in');
+  String _requireActiveUid() {
+    final uid = requireActiveFirebaseUid(_auth, _uid);
+    _cache.ensureSessionCurrent(_session!);
     return uid;
   }
 
