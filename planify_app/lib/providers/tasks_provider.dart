@@ -5,14 +5,20 @@ import 'package:planify_app/core/services/audio_service.dart';
 import 'package:planify_app/core/utils/app_snackbar.dart';
 import 'package:planify_app/data/models/task_model.dart';
 import 'package:planify_app/data/repositories/tasks_repository.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/account_scoped_notifier.dart';
 
-class TasksNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
+class TasksNotifier
+    extends AccountScopedStateNotifier<AsyncValue<List<TaskModel>>> {
   final TasksRepository _repo;
   final NotificationsService _notifications;
+  final String? _accountUid;
 
-  TasksNotifier(this._repo, this._notifications)
-      : super(const AsyncValue.loading()) {
-    load();
+  TasksNotifier(this._repo, this._notifications, this._accountUid)
+      : super(_accountUid == null
+            ? const AsyncValue.data([])
+            : const AsyncValue.loading()) {
+    if (_accountUid != null) load();
   }
 
   Future<void> load({
@@ -20,16 +26,22 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
     int? projectId,
     bool? isComplete,
   }) async {
+    if (_accountUid == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _repo.getTasks(
         priority: priority,
         projectId: projectId,
         isComplete: isComplete,
       ),
     );
+    if (!mounted) return;
+    state = result;
     final tasks = state.valueOrNull;
-    if (tasks != null) {
+    if (mounted && tasks != null) {
       await _trySyncTasks(tasks);
     }
   }
@@ -349,8 +361,10 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
   }
 
   Future<void> _trySyncTask(TaskModel task) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncTask(task);
+      await _notifications.syncTask(task, accountUid: uid);
     } catch (error) {
       // Saving the task succeeded; notification scheduling should not roll it back.
       _showNotificationFailure(error);
@@ -358,16 +372,20 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
   }
 
   Future<void> _trySyncTasks(List<TaskModel> tasks) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncTasks(tasks);
+      await _notifications.syncTasks(tasks, accountUid: uid);
     } catch (error) {
       _showNotificationFailure(error);
     }
   }
 
   Future<void> _tryCancelTaskReminder(int id) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.cancelTaskReminder(id);
+      await _notifications.cancelTaskReminder(id, accountUid: uid);
     } catch (_) {
       // Deleting/archiving succeeded even if local reminder cleanup fails.
     }
@@ -384,8 +402,12 @@ class TasksNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
 
 final tasksProvider =
     StateNotifierProvider<TasksNotifier, AsyncValue<List<TaskModel>>>(
-  (ref) => TasksNotifier(
-    ref.watch(tasksRepositoryProvider),
-    NotificationsService.instance,
-  ),
+  (ref) {
+    final uid = ref.watch(activeAccountUidProvider);
+    return TasksNotifier(
+      ref.watch(tasksRepositoryProvider),
+      NotificationsService.instance,
+      uid,
+    );
+  },
 );

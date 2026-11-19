@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planify_app/core/utils/firebase_identity.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/account_scoped_notifier.dart';
 
 class SearchItemModel {
   final int id;
@@ -67,14 +68,12 @@ class GlobalSearchResponseModel {
 }
 
 class SearchNotifier
-    extends StateNotifier<AsyncValue<GlobalSearchResponseModel?>> {
+    extends AccountScopedStateNotifier<AsyncValue<GlobalSearchResponseModel?>> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final String? _accountUid;
   String _lastQuery = '';
 
-  SearchNotifier() : super(const AsyncData(null));
-
-  String? get _uid => _auth.currentUser?.uid;
+  SearchNotifier(this._accountUid) : super(const AsyncData(null));
 
   Future<void> search(String query) async {
     if (query.trim().isEmpty) {
@@ -85,7 +84,11 @@ class SearchNotifier
     state = const AsyncLoading();
     try {
       final q = query.toLowerCase();
-      final uid = _requireUid();
+      final uid = _accountUid;
+      if (uid == null) {
+        state = const AsyncData(null);
+        return;
+      }
       final snapshots = await Future.wait([
         ownedQuery(_firestore, 'tasks', uid).get(),
         ownedQuery(_firestore, 'notes', uid).get(),
@@ -97,7 +100,7 @@ class SearchNotifier
       final eventsSnap = snapshots[2];
       final projectsSnap = snapshots[3];
 
-      if (_lastQuery != query) return;
+      if (!mounted || _lastQuery != query) return;
 
       final tasks = tasksSnap.docs
           .where((doc) =>
@@ -139,15 +142,9 @@ class SearchNotifier
       }
     }
   }
-
-  String _requireUid() {
-    final uid = _uid;
-    if (uid == null) throw Exception('Not logged in');
-    return uid;
-  }
 }
 
 final searchProvider = StateNotifierProvider<SearchNotifier,
     AsyncValue<GlobalSearchResponseModel?>>(
-  (ref) => SearchNotifier(),
+  (ref) => SearchNotifier(ref.watch(activeAccountUidProvider)),
 );

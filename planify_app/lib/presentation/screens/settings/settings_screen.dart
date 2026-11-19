@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:planify_app/core/services/notifications_service.dart';
 import 'package:planify_app/core/theme/app_theme.dart';
+import 'package:planify_app/data/datasources/local_cache_service.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
 import 'package:planify_app/providers/theme_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -97,7 +99,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               onTap: () async {
                 final messenger = ScaffoldMessenger.of(context);
                 await NotificationsService.instance.requestPermissions();
-                await NotificationsService.instance.restoreCachedReminders();
+                final uid = ref.read(activeAccountUidProvider);
+                if (uid != null) {
+                  await NotificationsService.instance.restoreCachedReminders(
+                    uid: uid,
+                    cache: ref.read(localCacheServiceProvider),
+                  );
+                }
                 if (!mounted) return;
                 messenger.showSnackBar(
                   const SnackBar(content: Text('Permissions requested.')),

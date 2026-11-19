@@ -5,23 +5,35 @@ import 'package:planify_app/core/services/audio_service.dart';
 import 'package:planify_app/core/utils/app_snackbar.dart';
 import 'package:planify_app/data/models/reminder_model.dart';
 import 'package:planify_app/data/repositories/reminders_repository.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/account_scoped_notifier.dart';
 
-class RemindersNotifier extends StateNotifier<AsyncValue<List<ReminderModel>>> {
+class RemindersNotifier
+    extends AccountScopedStateNotifier<AsyncValue<List<ReminderModel>>> {
   final RemindersRepository _repo;
   final NotificationsService _notifications;
+  final String? _accountUid;
 
-  RemindersNotifier(this._repo, this._notifications)
-      : super(const AsyncValue.loading()) {
-    load();
+  RemindersNotifier(this._repo, this._notifications, this._accountUid)
+      : super(_accountUid == null
+            ? const AsyncValue.data([])
+            : const AsyncValue.loading()) {
+    if (_accountUid != null) load();
   }
 
   Future<void> load({bool? isCompleted}) async {
+    if (_accountUid == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _repo.getReminders(isCompleted: isCompleted),
     );
+    if (!mounted) return;
+    state = result;
     final reminders = state.valueOrNull;
-    if (reminders != null) {
+    if (mounted && reminders != null) {
       await _trySyncReminders(reminders);
     }
   }
@@ -182,24 +194,30 @@ class RemindersNotifier extends StateNotifier<AsyncValue<List<ReminderModel>>> {
   }
 
   Future<void> _trySyncReminder(ReminderModel reminder) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncReminder(reminder);
+      await _notifications.syncReminder(reminder, accountUid: uid);
     } catch (error) {
       _showNotificationFailure(error);
     }
   }
 
   Future<void> _tryCancelReminder(int id) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.cancelReminder(id);
+      await _notifications.cancelReminder(id, accountUid: uid);
     } catch (_) {
       // Deleting succeeded even if local reminder cleanup fails.
     }
   }
 
   Future<void> _trySyncReminders(List<ReminderModel> reminders) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncReminders(reminders);
+      await _notifications.syncReminders(reminders, accountUid: uid);
     } catch (error) {
       _showNotificationFailure(error);
     }
@@ -219,5 +237,6 @@ final remindersProvider =
   (ref) => RemindersNotifier(
     ref.watch(remindersRepositoryProvider),
     NotificationsService.instance,
+    ref.watch(activeAccountUidProvider),
   ),
 );

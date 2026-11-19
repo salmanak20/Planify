@@ -1,17 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planify_app/data/models/project_model.dart';
 import 'package:planify_app/data/repositories/projects_repository.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/account_scoped_notifier.dart';
 
-class ProjectsNotifier extends StateNotifier<AsyncValue<List<ProjectModel>>> {
+class ProjectsNotifier
+    extends AccountScopedStateNotifier<AsyncValue<List<ProjectModel>>> {
   final ProjectsRepository _repo;
+  final String? _accountUid;
 
-  ProjectsNotifier(this._repo) : super(const AsyncValue.loading()) {
-    load();
+  ProjectsNotifier(this._repo, this._accountUid)
+      : super(_accountUid == null
+            ? const AsyncValue.data([])
+            : const AsyncValue.loading()) {
+    if (_accountUid != null) load();
   }
 
   Future<void> load() async {
+    if (_accountUid == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _repo.getProjects());
+    final result = await AsyncValue.guard(() => _repo.getProjects());
+    if (mounted) state = result;
   }
 
   Future<void> create(
@@ -44,5 +56,8 @@ class ProjectsNotifier extends StateNotifier<AsyncValue<List<ProjectModel>>> {
 
 final projectsProvider =
     StateNotifierProvider<ProjectsNotifier, AsyncValue<List<ProjectModel>>>(
-  (ref) => ProjectsNotifier(ref.watch(projectsRepositoryProvider)),
+  (ref) => ProjectsNotifier(
+    ref.watch(projectsRepositoryProvider),
+    ref.watch(activeAccountUidProvider),
+  ),
 );

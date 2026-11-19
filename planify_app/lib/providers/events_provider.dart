@@ -4,22 +4,34 @@ import 'package:planify_app/core/services/notifications_service.dart';
 import 'package:planify_app/core/utils/app_snackbar.dart';
 import 'package:planify_app/data/models/event_model.dart';
 import 'package:planify_app/data/repositories/events_repository.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/account_scoped_notifier.dart';
 
-class EventsNotifier extends StateNotifier<AsyncValue<List<EventModel>>> {
+class EventsNotifier
+    extends AccountScopedStateNotifier<AsyncValue<List<EventModel>>> {
   final EventsRepository _repo;
   final NotificationsService _notifications;
+  final String? _accountUid;
 
-  EventsNotifier(this._repo, this._notifications)
-      : super(const AsyncValue.loading()) {
-    load();
+  EventsNotifier(this._repo, this._notifications, this._accountUid)
+      : super(_accountUid == null
+            ? const AsyncValue.data([])
+            : const AsyncValue.loading()) {
+    if (_accountUid != null) load();
   }
 
   Future<void> load({DateTime? start, DateTime? end}) async {
+    if (_accountUid == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     state = const AsyncValue.loading();
-    state =
+    final result =
         await AsyncValue.guard(() => _repo.getEvents(start: start, end: end));
+    if (!mounted) return;
+    state = result;
     final events = state.valueOrNull;
-    if (events != null) {
+    if (mounted && events != null) {
       await _trySyncEvents(events);
     }
   }
@@ -284,8 +296,10 @@ class EventsNotifier extends StateNotifier<AsyncValue<List<EventModel>>> {
   }
 
   Future<void> _trySyncEvent(EventModel event) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncEvent(event);
+      await _notifications.syncEvent(event, accountUid: uid);
     } catch (error) {
       // The event was saved; notification scheduling is best-effort.
       _showNotificationFailure(error);
@@ -293,16 +307,20 @@ class EventsNotifier extends StateNotifier<AsyncValue<List<EventModel>>> {
   }
 
   Future<void> _trySyncEvents(List<EventModel> events) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.syncEvents(events);
+      await _notifications.syncEvents(events, accountUid: uid);
     } catch (error) {
       _showNotificationFailure(error);
     }
   }
 
   Future<void> _tryCancelEventReminder(int id) async {
+    final uid = _accountUid;
+    if (uid == null) return;
     try {
-      await _notifications.cancelEventReminder(id);
+      await _notifications.cancelEventReminder(id, accountUid: uid);
     } catch (_) {
       // The event was deleted; stale local reminder cleanup should not roll it back.
     }
@@ -322,5 +340,6 @@ final eventsProvider =
   (ref) => EventsNotifier(
     ref.watch(eventsRepositoryProvider),
     NotificationsService.instance,
+    ref.watch(activeAccountUidProvider),
   ),
 );

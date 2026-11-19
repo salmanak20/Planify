@@ -1,19 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:planify_app/data/models/note_model.dart';
 import 'package:planify_app/data/repositories/notes_repository.dart';
+import 'package:planify_app/providers/account_scope_provider.dart';
+import 'package:planify_app/providers/account_scoped_notifier.dart';
 
-class NotesNotifier extends StateNotifier<AsyncValue<List<NoteModel>>> {
+class NotesNotifier
+    extends AccountScopedStateNotifier<AsyncValue<List<NoteModel>>> {
   final NotesRepository _repo;
+  final String? _accountUid;
 
-  NotesNotifier(this._repo) : super(const AsyncValue.loading()) {
-    load();
+  NotesNotifier(this._repo, this._accountUid)
+      : super(_accountUid == null
+            ? const AsyncValue.data([])
+            : const AsyncValue.loading()) {
+    if (_accountUid != null) load();
   }
 
   Future<void> load({String? search, String? folder, String? tag}) async {
+    if (_accountUid == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(
+    final result = await AsyncValue.guard(
       () => _repo.getNotes(search: search, folder: folder, tag: tag),
     );
+    if (mounted) state = result;
   }
 
   Future<void> create({
@@ -140,5 +152,8 @@ class NotesNotifier extends StateNotifier<AsyncValue<List<NoteModel>>> {
 
 final notesProvider =
     StateNotifierProvider<NotesNotifier, AsyncValue<List<NoteModel>>>(
-  (ref) => NotesNotifier(ref.watch(notesRepositoryProvider)),
+  (ref) => NotesNotifier(
+    ref.watch(notesRepositoryProvider),
+    ref.watch(activeAccountUidProvider),
+  ),
 );
